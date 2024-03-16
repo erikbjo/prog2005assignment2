@@ -24,7 +24,13 @@ const StatusPath = DashboardPath + "/status/"
 // RestCountriesApi Christopher's RestCountries API
 const RestCountriesApi = "http://129.241.150.113:8080/v3.1"
 
+// TestRestCountriesApi Local stub for RestCountries API
+const TestRestCountriesApi = "http://localhost:8080/test/restcountries"
+
 // CurrencyApi Christopher's Currency API
 const CurrencyApi = "http://129.241.150.113:9090/currency/"
+
+// TestCurrencyApi Local stub for Currency API
+const TestCurrencyApi = "http://localhost:8080/test/currency"
 
 /* https://open-meteo.com/en/features#available-apis */
