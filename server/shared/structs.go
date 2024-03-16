@@ -1,5 +1,7 @@
 package shared
 
+// A Status struct to hold the status of the server, including the status of the APIs and the version
+// of the server.
 type Status struct {
 	CountriesAPI   int    `json:"countries_api"`
 	MeteoAPI       int    `json:"meteo_api"`
