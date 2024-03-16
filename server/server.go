@@ -17,8 +17,10 @@ func Start() {
 	port := utils.GetPort()
 
 	// Set up handler endpoints
-	// http.HandleFunc(shared.DefaultPath, handlers.DefaultHandler)
 	http.HandleFunc(shared.StatusPath, handlers.StatusHandler)
+
+	// Serve the web page for any other path
+	http.HandleFunc(shared.DefaultPath, handlers.DefaultHandler)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")
