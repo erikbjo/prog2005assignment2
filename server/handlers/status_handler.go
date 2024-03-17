@@ -10,20 +10,6 @@ import (
 	"time"
 )
 
-// Current API URLs, changes if testing
-var (
-	currentRestCountriesApi = shared.RestCountriesApi
-	currentCurrencyApi      = shared.CurrencyApi
-)
-
-// startTime is the time the server started
-var startTime = time.Now()
-
-// client is the HTTP client used to send requests
-var client = &http.Client{
-	Timeout: 3 * time.Second,
-}
-
 // StatusHandler
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
@@ -33,7 +19,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
-		handleStatusGetRequest(w, r, false)
+		handleStatusGetRequest(w, r)
 
 	default:
 		// If the method is not implemented, return an error with the allowed methods
@@ -50,12 +36,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request) {
 
 // handleStatusGetRequest handles the GET request for the /status path.
 // It returns the status of the server and the APIs it relies on.
-func handleStatusGetRequest(w http.ResponseWriter, r *http.Request, testing bool) {
-	if testing {
-		currentRestCountriesApi = shared.TestRestCountriesApi
-		currentCurrencyApi = shared.TestCurrencyApi
-	}
-
+func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
 	// TODO: Implement the MeteoAPI, NotificationDB, Webhooks
 	currentStatus := shared.Status{
