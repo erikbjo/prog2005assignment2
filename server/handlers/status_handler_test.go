@@ -9,6 +9,9 @@ import (
 // TestStatusHandler tests the StatusHandler function, which handles requests for /status
 // It tests the GET method for the /status path
 func TestStatusHandler(t *testing.T) {
+	// Use stubs for testing
+	SetStubsForTesting()
+
 	// Create tests with different HTTP methods and expected status codes
 	tests := []struct {
 		name       string
@@ -80,9 +83,8 @@ func Test_getStatusCode(t *testing.T) {
 // TODO: Implement the stubs to test
 func Test_handleStatusGetRequest(t *testing.T) {
 	type args struct {
-		w       http.ResponseWriter
-		r       *http.Request
-		testing bool
+		w http.ResponseWriter
+		r *http.Request
 	}
 	tests := []struct {
 		name string
@@ -93,7 +95,7 @@ func Test_handleStatusGetRequest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				handleStatusGetRequest(tt.args.w, tt.args.r, tt.args.testing)
+				handleStatusGetRequest(tt.args.w, tt.args.r)
 			},
 		)
 	}
