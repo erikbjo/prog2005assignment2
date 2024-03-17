@@ -16,7 +16,7 @@ var (
 	currentCurrencyApi      = shared.CurrencyApi
 )
 
-// StartTime is the time the server started
+// startTime is the time the server started
 var startTime = time.Now()
 
 // client is the HTTP client used to send requests
