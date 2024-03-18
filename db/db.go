@@ -1,6 +1,7 @@
 package db
 
 import (
+	"assignment-2/server/shared"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
 	"errors"
@@ -34,7 +35,7 @@ func handleDB(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		addDocument(w, r)
+		addDashboardConfigDocument(w, r)
 	case http.MethodGet:
 		displayDocument(w, r)
 	default:
@@ -51,7 +52,7 @@ func handleDB(w http.ResponseWriter, r *http.Request) {
 /*
 Reads a string from the body in plain-text and sends it to Firestore to be registered as a document.
 */
-func addDocument(w http.ResponseWriter, r *http.Request) {
+func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	// very generic way of reading body; should be customized to specific use case
 	content, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -74,10 +75,7 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
 		id, _, err2 := client.Collection(collection).Add(
 			ctx,
-			map[string]interface{}{
-				"content": string(content),           // this is self-defined and embeds the content passed by the client
-				"time":    firestore.ServerTimestamp, // exemplifying Firestore features
-			},
+			shared.DashboardConfig{},
 		)
 		if err2 != nil {
 			// Error handling
