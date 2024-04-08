@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -61,6 +62,8 @@ func RegistrationsHandlerWithID(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	log.Println("Received request to get registration with ID ", id)
 	http.Error(w, "GET request not implemented", http.StatusNotImplemented)
 }
 

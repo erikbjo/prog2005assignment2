@@ -1,6 +1,6 @@
 module assignment-2
 
-go 1.21
+go 1.22.2
 
 require (
 	cloud.google.com/go/firestore v1.15.0
