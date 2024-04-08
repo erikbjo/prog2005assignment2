@@ -1,15 +1,14 @@
 package db
 
 import (
-	"assignment-2/server/shared"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
+	"encoding/json"
 	"errors"
 	firebase "firebase.google.com/go" // Generic firebase support
 	"fmt"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"io"
 	"log"
 	"net/http"
 )
@@ -57,14 +56,26 @@ Reads a string from the body in plain-text and sends it to Firestore to be regis
 func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	// very generic way of reading body; should be customized to specific use case
 	// e.g. decode the body into dashboard config
-	content, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println("Reading payload from body failed.")
-		http.Error(w, "Reading payload failed.", http.StatusInternalServerError)
-		return
+
+	/*
+		contentBuffer, err := io.Copy(&contentBuffer)
+		if err != nil {
+			log.Println("Reading payload from body failed.")
+			http.Error(w, "Reading payload failed.", http.StatusInternalServerError)
+			return
+		}
+	*/
+
+	config := map[string]interface{}{}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&config); err != nil {
+		http.Error(w, "Error while decoding json: ", http.StatusInternalServerError)
+		log.Println("Error while decoding json: ", err.Error())
 	}
-	log.Println("Received request to add document for content ", string(content))
-	if len(string(content)) == 0 {
+
+	log.Println("Received request to add document for content ", fmt.Sprint(config))
+	if len(fmt.Sprint(config)) == 0 {
 		log.Println("Content appears to be empty.")
 		http.Error(
 			w,
@@ -78,12 +89,15 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
 		id, _, err2 := client.Collection(collection).Add(
 			ctx,
-			shared.DashboardConfig{},
+			config,
 		)
 		if err2 != nil {
 			// Error handling
-			log.Println("Error when adding document " + string(content) + ", Error: " + err2.Error())
-			http.Error(w, "Error when adding document "+string(content)+", Error: "+err2.Error(), http.StatusBadRequest)
+			log.Println("Error when adding document " + fmt.Sprint(config) + ", Error: " + err2.Error())
+			http.Error(
+				w, "Error when adding document "+fmt.Sprint(config)+", Error: "+err2.Error(),
+				http.StatusBadRequest,
+			)
 			return
 		} else {
 			// Returns document ID in body
