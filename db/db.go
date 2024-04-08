@@ -56,6 +56,7 @@ Reads a string from the body in plain-text and sends it to Firestore to be regis
 */
 func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	// very generic way of reading body; should be customized to specific use case
+	// e.g. decode the body into dashboard config
 	content, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Reading payload from body failed.")
@@ -186,12 +187,12 @@ func Initialize() {
 		log.Println(err)
 		return
 	}
+}
 
-	// Close down client at the end of the function
-	defer func() {
-		errClose := client.Close()
-		if errClose != nil {
-			log.Fatal("Closing of the Firebase client failed. Error:", errClose)
-		}
-	}()
+// Close down client
+func Close() {
+	errClose := client.Close()
+	if errClose != nil {
+		log.Fatal("Closing of the Firebase client failed. Error:", errClose)
+	}
 }
