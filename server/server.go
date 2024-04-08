@@ -1,6 +1,7 @@
 package server
 
 import (
+	"assignment-2/db"
 	"assignment-2/server/handlers"
 	"assignment-2/server/shared"
 	"assignment-2/server/utils"
@@ -13,6 +14,9 @@ import (
 Start the server on the port specified in the environment variable PORT. If PORT is not set, the default port 8080 is used.
 */
 func Start() {
+	// Initialization of firebase database
+	db.Initialize()
+
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
 
