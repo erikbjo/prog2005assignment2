@@ -17,6 +17,9 @@ func Start() {
 	// Initialization of firebase database
 	db.Initialize()
 
+	// Firebase client closes at the end of this function
+	defer db.Close()
+
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
 
@@ -61,7 +64,9 @@ func Start() {
 	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
 	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
 
+	mux.HandleFunc("/test/", db.HandleDB)
+
 	// Start server
 	log.Println("Starting server on port " + port + " ...")
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }
