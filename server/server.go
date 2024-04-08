@@ -16,11 +16,29 @@ func Start() {
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
 
-	// Set up handler endpoints
-	http.HandleFunc(shared.StatusPath, handlers.StatusHandler)
+	// Using mux to handle /'s and parameters
+	mux := http.NewServeMux()
 
-	// Serve the web page for any other path
-	http.HandleFunc(shared.DefaultPath, handlers.DefaultHandler)
+	// Set up handler endpoints, with and without trailing slash
+	// Status
+	mux.HandleFunc(shared.StatusPath, handlers.StatusHandler)
+	mux.HandleFunc(shared.StatusPath[:len(shared.StatusPath)-1], handlers.StatusHandler)
+
+	// Registrations
+	mux.HandleFunc(shared.RegistrationsPath, handlers.RegistrationsHandler)
+	mux.HandleFunc(
+		shared.RegistrationsPath[:len(shared.RegistrationsPath)-1],
+		handlers.RegistrationsHandler,
+	)
+
+	// Registrations with ID
+	mux.HandleFunc(shared.RegistrationsPath+"{id}", handlers.RegistrationsHandlerWithID)
+
+	// Default, serves the web page
+	mux.HandleFunc("/", handlers.DefaultHandler)
+
+	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
+	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")
