@@ -32,7 +32,7 @@ const (
 /*
 Handler for all database operations
 */
-func handleDB(w http.ResponseWriter, r *http.Request) {
+func HandleDB(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{http.MethodPost, http.MethodGet}
 
 	switch r.Method {
