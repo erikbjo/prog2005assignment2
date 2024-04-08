@@ -3,7 +3,7 @@ package server
 import (
 	"assignment-2/server/handlers"
 	"assignment-2/server/shared"
-	"assignment-2/utils"
+	"assignment-2/server/utils"
 	"log"
 	"net/http"
 )
