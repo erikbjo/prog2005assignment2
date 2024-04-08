@@ -64,7 +64,8 @@ func Start() {
 	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
 	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
 
-	mux.HandleFunc("/test/", db.HandleDB)
+	mux.HandleFunc("/dbTest/", db.HandleDB)
+	mux.HandleFunc("/dbTest/{id}/", db.HandleDB)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")

@@ -1,15 +1,12 @@
 package db
 
 import (
-	"assignment-2/server/shared"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
-	"errors"
+	"encoding/json"
 	firebase "firebase.google.com/go" // Generic firebase support
 	"fmt"
-	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
-	"io"
 	"log"
 	"net/http"
 )
@@ -57,14 +54,27 @@ Reads a string from the body in plain-text and sends it to Firestore to be regis
 func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	// very generic way of reading body; should be customized to specific use case
 	// e.g. decode the body into dashboard config
-	content, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Println("Reading payload from body failed.")
-		http.Error(w, "Reading payload failed.", http.StatusInternalServerError)
+
+	/*
+		contentBuffer, err := io.Copy(&contentBuffer)
+		if err != nil {
+			log.Println("Reading payload from body failed.")
+			http.Error(w, "Reading payload failed.", http.StatusInternalServerError)
+			return
+		}
+	*/
+
+	config := map[string]interface{}{}
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&config); err != nil {
+		http.Error(w, "Error while decoding json.", http.StatusInternalServerError)
+		log.Println("Error while decoding json: ", err.Error())
 		return
 	}
-	log.Println("Received request to add document for content ", string(content))
-	if len(string(content)) == 0 {
+
+	log.Println("Received request to add document for content ", fmt.Sprint(config))
+	if len(fmt.Sprint(config)) == 0 {
 		log.Println("Content appears to be empty.")
 		http.Error(
 			w,
@@ -78,12 +88,15 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
 		id, _, err2 := client.Collection(collection).Add(
 			ctx,
-			shared.DashboardConfig{},
+			config,
 		)
 		if err2 != nil {
 			// Error handling
-			log.Println("Error when adding document " + string(content) + ", Error: " + err2.Error())
-			http.Error(w, "Error when adding document "+string(content)+", Error: "+err2.Error(), http.StatusBadRequest)
+			log.Println("Error when adding document " + fmt.Sprint(config) + ", Error: " + err2.Error())
+			http.Error(
+				w, "Error when adding document "+fmt.Sprint(config)+", Error: "+err2.Error(),
+				http.StatusBadRequest,
+			)
 			return
 		} else {
 			// Returns document ID in body
@@ -98,9 +111,12 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 Lists all the documents in the collection (see constant above) to the user.
 */
 func displayDocument(w http.ResponseWriter, r *http.Request) {
-
+	fmt.Println("entered displayDocument")
 	// Gets dashboard ID from given URL
 	dashboardId := r.PathValue("id")
+
+	// map to store found dashboard configs
+	var m map[string]interface{}
 
 	if len(dashboardId) != 0 {
 		// Extract individual dashboard
@@ -121,7 +137,7 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// A dashboard map with string keys. Each key is one field, like "content" or "timestamp"
-		m := doc.Data()
+		m = doc.Data()
 		_, err3 := fmt.Fprintln(w, m["content"]) // here we retrieve the field containing the originally stored payload
 		if err3 != nil {
 			log.Println("Error while writing response body of dashboard " + dashboardId)
@@ -131,7 +147,18 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 			)
 			return
 		}
+
+		// Encodes the found document
+		encoder := json.NewEncoder(w)
+		if err := encoder.Encode(m); err != nil {
+			http.Error(w, "Error while encoding to json.", http.StatusInternalServerError)
+			log.Println("Error while encoding to json: ", err.Error())
+		}
 	} else {
+		http.Error(w, "Can not retrieve document, no valid ID was provided.", http.StatusBadRequest)
+	}
+	/* Add this again if we want it to be possible to retrieve all documents at once.
+	else {
 		// Collective retrieval of dashboards
 		iter := client.Collection(collection).Documents(ctx) // Loop through all entries in collection "dashboards"
 
@@ -147,7 +174,7 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 			// Note: You can access the document ID using "doc.Ref.ID"
 
 			// A dashboard map with string keys. Each key is one field, like "content" or "timestamp"
-			m := doc.Data()
+			m = doc.Data()
 			_, err = fmt.Fprintln(w, m["content"])
 			if err != nil {
 				log.Println("Error while writing response body (Error: " + err.Error() + ")")
@@ -160,6 +187,7 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	*/
 }
 
 func Initialize() {
