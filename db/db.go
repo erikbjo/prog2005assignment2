@@ -160,14 +160,14 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func initialize() {
+func Initialize() {
 	// Firebase initialization
 	ctx = context.Background()
 
 	// We use a service account, load credentials file that you downloaded from your project's settings menu.
 	// It should reside in your project directory.
 	// Make sure this file is git-ignored, since it is the access token to the database.
-	sa := option.WithCredentialsFile("./placeholder_path.json")
+	sa := option.WithCredentialsFile("./serviceAccountKey.json")
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		log.Println(err)
