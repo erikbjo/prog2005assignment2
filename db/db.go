@@ -12,7 +12,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 )
 
 /*
@@ -25,7 +24,10 @@ var ctx context.Context
 var client *firestore.Client
 
 // Collection name in Firestore
-const collection = "dashboards"
+const (
+	firebaseAuth = "./serviceAccountKey.json"
+	collection   = "dashboards"
+)
 
 /*
 Handler for all database operations
@@ -96,9 +98,8 @@ Lists all the documents in the collection (see constant above) to the user.
 */
 func displayDocument(w http.ResponseWriter, r *http.Request) {
 
-	// Test for embedded dashboard ID from URL
-	elem := strings.Split(r.URL.Path, "/")
-	dashboardId := elem[2]
+	// Gets dashboard ID from given URL
+	dashboardId := r.PathValue("id")
 
 	if len(dashboardId) != 0 {
 		// Extract individual dashboard
@@ -167,7 +168,7 @@ func Initialize() {
 	// We use a service account, load credentials file that you downloaded from your project's settings menu.
 	// It should reside in your project directory.
 	// Make sure this file is git-ignored, since it is the access token to the database.
-	sa := option.WithCredentialsFile("./serviceAccountKey.json")
+	sa := option.WithCredentialsFile(firebaseAuth)
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		log.Println(err)
