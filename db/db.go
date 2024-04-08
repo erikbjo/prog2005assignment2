@@ -1,6 +1,7 @@
 package db
 
 import (
+	"assignment-2/server/shared"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
 	"errors"
@@ -11,7 +12,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 )
 
 /*
@@ -24,17 +24,20 @@ var ctx context.Context
 var client *firestore.Client
 
 // Collection name in Firestore
-const collection = "dashboards"
+const (
+	firebaseAuth = "./serviceAccountKey.json"
+	collection   = "dashboards"
+)
 
 /*
 Handler for all database operations
 */
-func handleDB(w http.ResponseWriter, r *http.Request) {
+func HandleDB(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{http.MethodPost, http.MethodGet}
 
 	switch r.Method {
 	case http.MethodPost:
-		addDocument(w, r)
+		addDashboardConfigDocument(w, r)
 	case http.MethodGet:
 		displayDocument(w, r)
 	default:
@@ -51,8 +54,9 @@ func handleDB(w http.ResponseWriter, r *http.Request) {
 /*
 Reads a string from the body in plain-text and sends it to Firestore to be registered as a document.
 */
-func addDocument(w http.ResponseWriter, r *http.Request) {
+func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	// very generic way of reading body; should be customized to specific use case
+	// e.g. decode the body into dashboard config
 	content, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Println("Reading payload from body failed.")
@@ -74,10 +78,7 @@ func addDocument(w http.ResponseWriter, r *http.Request) {
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
 		id, _, err2 := client.Collection(collection).Add(
 			ctx,
-			map[string]interface{}{
-				"content": string(content),           // this is self-defined and embeds the content passed by the client
-				"time":    firestore.ServerTimestamp, // exemplifying Firestore features
-			},
+			shared.DashboardConfig{},
 		)
 		if err2 != nil {
 			// Error handling
@@ -98,9 +99,8 @@ Lists all the documents in the collection (see constant above) to the user.
 */
 func displayDocument(w http.ResponseWriter, r *http.Request) {
 
-	// Test for embedded dashboard ID from URL
-	elem := strings.Split(r.URL.Path, "/")
-	dashboardId := elem[2]
+	// Gets dashboard ID from given URL
+	dashboardId := r.PathValue("id")
 
 	if len(dashboardId) != 0 {
 		// Extract individual dashboard
@@ -162,14 +162,14 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func initialize() {
+func Initialize() {
 	// Firebase initialization
 	ctx = context.Background()
 
 	// We use a service account, load credentials file that you downloaded from your project's settings menu.
 	// It should reside in your project directory.
 	// Make sure this file is git-ignored, since it is the access token to the database.
-	sa := option.WithCredentialsFile("./placeholder_path.json")
+	sa := option.WithCredentialsFile(firebaseAuth)
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
 		log.Println(err)
@@ -187,12 +187,12 @@ func initialize() {
 		log.Println(err)
 		return
 	}
+}
 
-	// Close down client at the end of the function
-	defer func() {
-		errClose := client.Close()
-		if errClose != nil {
-			log.Fatal("Closing of the Firebase client failed. Error:", errClose)
-		}
-	}()
+// Close down client
+func Close() {
+	errClose := client.Close()
+	if errClose != nil {
+		log.Fatal("Closing of the Firebase client failed. Error:", errClose)
+	}
 }
