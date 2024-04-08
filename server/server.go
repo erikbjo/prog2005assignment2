@@ -34,6 +34,23 @@ func Start() {
 	// Registrations with ID
 	mux.HandleFunc(shared.RegistrationsPath+"{id}", handlers.RegistrationsHandlerWithID)
 
+	// Dashboards
+	mux.HandleFunc(shared.DashboardsPath, handlers.DashboardsHandlerWithID)
+	mux.HandleFunc(
+		shared.DashboardsPath[:len(shared.DashboardsPath)-1],
+		handlers.DashboardsHandlerWithID,
+	)
+
+	// Notifications
+	mux.HandleFunc(shared.NotificationsPath, handlers.NotificationsHandler)
+	mux.HandleFunc(
+		shared.NotificationsPath[:len(shared.NotificationsPath)-1],
+		handlers.NotificationsHandler,
+	)
+
+	// Notifications with ID
+	mux.HandleFunc(shared.NotificationsPath+"{id}", handlers.NotificationsHandlerWithID)
+
 	// Default, serves the web page
 	mux.HandleFunc("/", handlers.DefaultHandler)
 
