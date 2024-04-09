@@ -58,14 +58,17 @@ func Start() {
 	// Notifications with ID
 	mux.HandleFunc(shared.NotificationsPath+"{id}", handlers.NotificationsHandlerWithID)
 
-	// Default, serves the web page
+	fs := http.FileServer(http.Dir("web"))
+	mux.Handle("/web/", http.StripPrefix("/web/", fs))
+
+	// Default, redirect to /web/
 	mux.HandleFunc("/", handlers.DefaultHandler)
 
 	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
 	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
 
-	mux.HandleFunc("/dbTest/", db.HandleDB)
-	mux.HandleFunc("/dbTest/{id}/", db.HandleDB)
+	// mux.HandleFunc("/dbTest/", db.HandleDB)
+	// mux.HandleFunc("/dbTest/{id}/", db.HandleDB)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")
