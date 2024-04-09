@@ -10,12 +10,19 @@ import (
 	"net/http"
 )
 
+var registrationsWithIDEndpoint = shared.Endpoint{}
+var registrationsEndpoint = shared.Endpoint{
+	Path: "/registrations",
+}
+
 func RegistrationsHandler(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{
 		http.MethodGet,
 		http.MethodHead,
 		http.MethodPost,
 	}
+
+	registrationsEndpoint.Methods = implementedMethods
 
 	// Switch on the HTTP request method
 	switch r.Method {
@@ -38,6 +45,10 @@ func RegistrationsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func getRegistrationsWithIDEndpoint() shared.Endpoint {
+	return registrationsWithIDEndpoint
 }
 
 func RegistrationsHandlerWithID(w http.ResponseWriter, r *http.Request) {
@@ -98,13 +109,13 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	// If there is an error, return an error message
 
 	// Read and parse the body
-	body, err := getDashboardConfigFromBody(w, r)
+	validRequest, err := checkValidityOfResponseBody(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	log.Println("Received request to create registration with country ", body.Country)
+	log.Println(validRequest)
 
 	// Save the DashboardConfig to the database
 	// TODO: Implement saving the DashboardConfig to the database
@@ -137,13 +148,13 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	body, err := getDashboardConfigFromBody(w, r)
+	body, err := checkValidityOfResponseBody(w, r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	log.Println("Received request to update registration with country ", body.Country)
+	log.Println(body)
 
 	log.Println("Received request to update registration with ID ", id)
 
@@ -162,8 +173,8 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 	http.Error(w, "DELETE request not implemented", http.StatusNotImplemented)
 }
 
-func getDashboardConfigFromBody(w http.ResponseWriter, r *http.Request) (
-	shared.DashboardConfig,
+func checkValidityOfResponseBody(w http.ResponseWriter, r *http.Request) (
+	bool,
 	error,
 ) {
 	var dashboardConfig shared.DashboardConfig
@@ -173,20 +184,22 @@ func getDashboardConfigFromBody(w http.ResponseWriter, r *http.Request) (
 	if err != nil {
 		log.Println("Error reading request body: ", err)
 		// Note: We don't return the error here because we want to return a generic error message
-		return dashboardConfig, fmt.Errorf("error reading request body")
+		return false, fmt.Errorf("error reading request body")
 	}
 
 	if len(body) == 0 {
 		log.Println("Empty request body")
-		return dashboardConfig, fmt.Errorf("empty request body")
+		return false, fmt.Errorf("empty request body")
 	}
 
 	// Decode the body into a DashboardConfig struct
 	err = json.Unmarshal(body, &dashboardConfig)
 	if err != nil {
 		log.Println("Error decoding request body: ", err)
-		return dashboardConfig, fmt.Errorf("error decoding request body")
+		return false, fmt.Errorf("error decoding request body")
 	}
 
-	return dashboardConfig, nil
+	// Additional checks can be added here to validate the body
+
+	return true, nil
 }
