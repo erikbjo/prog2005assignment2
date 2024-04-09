@@ -3,6 +3,10 @@ package server
 import (
 	"assignment-2/db"
 	"assignment-2/server/handlers"
+	"assignment-2/server/handlers/dashboards"
+	"assignment-2/server/handlers/notifications"
+	"assignment-2/server/handlers/registrations"
+	"assignment-2/server/handlers/status"
 	"assignment-2/server/shared"
 	"assignment-2/server/utils"
 	"log"
@@ -26,46 +30,52 @@ func Start() {
 	// Using mux to handle /'s and parameters
 	mux := http.NewServeMux()
 
+	// Initialize the site map
+	handlers.Init()
+
 	// Set up handler endpoints, with and without trailing slash
 	// Status
-	mux.HandleFunc(shared.StatusPath, handlers.StatusHandler)
-	mux.HandleFunc(shared.StatusPath[:len(shared.StatusPath)-1], handlers.StatusHandler)
+	mux.HandleFunc(shared.StatusPath, status.Handler)
+	mux.HandleFunc(shared.StatusPath[:len(shared.StatusPath)-1], status.Handler)
 
 	// Registrations
-	mux.HandleFunc(shared.RegistrationsPath, handlers.RegistrationsHandler)
+	mux.HandleFunc(shared.RegistrationsPath, registrations.HandlerWithoutID)
 	mux.HandleFunc(
 		shared.RegistrationsPath[:len(shared.RegistrationsPath)-1],
-		handlers.RegistrationsHandler,
+		registrations.HandlerWithoutID,
 	)
 
 	// Registrations with ID
-	mux.HandleFunc(shared.RegistrationsPath+"{id}", handlers.RegistrationsHandlerWithID)
+	mux.HandleFunc(shared.RegistrationsPath+"{id}", registrations.HandlerWithID)
 
 	// Dashboards
-	mux.HandleFunc(shared.DashboardsPath, handlers.DashboardsHandlerWithID)
+	mux.HandleFunc(shared.DashboardsPath, dashboards.HandlerWithID)
 	mux.HandleFunc(
 		shared.DashboardsPath[:len(shared.DashboardsPath)-1],
-		handlers.DashboardsHandlerWithID,
+		dashboards.HandlerWithID,
 	)
 
 	// Notifications
-	mux.HandleFunc(shared.NotificationsPath, handlers.NotificationsHandler)
+	mux.HandleFunc(shared.NotificationsPath, notifications.Handler)
 	mux.HandleFunc(
 		shared.NotificationsPath[:len(shared.NotificationsPath)-1],
-		handlers.NotificationsHandler,
+		notifications.Handler,
 	)
 
 	// Notifications with ID
-	mux.HandleFunc(shared.NotificationsPath+"{id}", handlers.NotificationsHandlerWithID)
+	mux.HandleFunc(shared.NotificationsPath+"{id}", notifications.NotificationsHandlerWithID)
 
-	// Default, serves the web page
+	fs := http.FileServer(http.Dir("web"))
+	mux.Handle("/web/", http.StripPrefix("/web/", fs))
+
+	// Default, redirect to /web/
 	mux.HandleFunc("/", handlers.DefaultHandler)
 
 	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
 	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
 
-	mux.HandleFunc("/dbTest/", db.HandleDB)
-	mux.HandleFunc("/dbTest/{id}/", db.HandleDB)
+	// mux.HandleFunc("/dbTest/", db.HandleDB)
+	// mux.HandleFunc("/dbTest/{id}/", db.HandleDB)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")

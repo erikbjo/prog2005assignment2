@@ -1,13 +1,15 @@
-package handlers
+package dashboards
 
 import (
+	"assignment-2/db"
 	"fmt"
+	"log"
 	"net/http"
 )
 
-// DashboardsHandlerWithID handles the /dashboard/v1/dashboards path.
+// HandlerWithID handles the /dashboard/v1/dashboards path.
 // It currently only supports GET requests
-func DashboardsHandlerWithID(w http.ResponseWriter, r *http.Request) {
+func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{
 		http.MethodGet,
 	}
@@ -33,5 +35,17 @@ func DashboardsHandlerWithID(w http.ResponseWriter, r *http.Request) {
 // handleDashboardsGetRequest handles the GET request for the /dashboard/v1/dashboards path.
 // It is used to retrieve the populated dashboards.
 func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "GET request not implemented", http.StatusNotImplemented)
+	if len(r.PathValue("id")) == 0 {
+		http.Error(w, "No document ID was provided.", http.StatusBadRequest)
+	} else {
+		err := db.DisplayDocument(w, r, db.DashboardCollection)
+		if err != nil {
+			log.Println("Error while trying to display dashboard document: ", err.Error())
+			http.Error(
+				w,
+				"Error while trying to display dashboard document.",
+				http.StatusInternalServerError,
+			)
+		}
+	}
 }

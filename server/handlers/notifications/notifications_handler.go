@@ -1,14 +1,14 @@
-package handlers
+package notifications
 
 import (
 	"fmt"
 	"net/http"
 )
 
-// NotificationsHandler handles the /notifications path.
+// Handler handles the /notifications path.
 // It currently supports GET, POST and DELETE requests.
 // Endpoint for managing webhooks for event notifications.
-func NotificationsHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{
 		http.MethodGet,
 		http.MethodPost,

@@ -1,6 +1,7 @@
-package handlers
+package status
 
 import (
+	"assignment-2/server/handlers"
 	"assignment-2/server/shared"
 	"encoding/json"
 	"fmt"
@@ -10,10 +11,10 @@ import (
 	"time"
 )
 
-// StatusHandler
+// Handler
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
-func StatusHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{http.MethodGet}
 
 	// Switch on the HTTP request method
@@ -40,13 +41,13 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
 	// TODO: Implement the MeteoAPI, NotificationDB, Webhooks
 	currentStatus := shared.Status{
-		CountriesAPI:   getStatusCode(currentRestCountriesApi, w),
+		CountriesAPI:   getStatusCode(handlers.CurrentRestCountriesApi, w),
 		MeteoAPI:       http.StatusNotImplemented,
-		CurrencyAPI:    getStatusCode(currentCurrencyApi, w),
+		CurrencyAPI:    getStatusCode(handlers.CurrentCurrencyApi, w),
 		NotificationDB: http.StatusNotImplemented,
 		Webhooks:       http.StatusNotImplemented,
 		Version:        shared.Version,
-		Uptime:         math.Round(time.Since(startTime).Seconds()),
+		Uptime:         math.Round(time.Since(handlers.StartTime).Seconds()),
 	}
 
 	// Marshal the status object to JSON
@@ -70,7 +71,7 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 // If the URL is not reachable, it returns 503.
 func getStatusCode(url string, w http.ResponseWriter) int {
 	// Send a GET request to the URL
-	resp, err := client.Get(url)
+	resp, err := handlers.Client.Get(url)
 	if err != nil {
 		// If there is an error, return 503
 		return http.StatusServiceUnavailable
