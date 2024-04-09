@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestStatusHandler tests the StatusHandler function, which handles requests for /status
+// TestStatusHandler tests the Handler function, which handles requests for /status
 // It tests the GET method for the /status path
 func TestStatusHandler(t *testing.T) {
 	// Use stubs for testing
@@ -42,7 +42,7 @@ func TestStatusHandler(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				// Call the handler
-				StatusHandler(w, req)
+				Handler(w, req)
 
 				// Check if the status code matches expected
 				if w.Code != tt.statusCode {

@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-// DashboardsHandlerWithID handles the /dashboard/v1/dashboards path.
+// HandlerWithID handles the /dashboard/v1/dashboards path.
 // It currently only supports GET requests
-func DashboardsHandlerWithID(w http.ResponseWriter, r *http.Request) {
+func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{
 		http.MethodGet,
 	}

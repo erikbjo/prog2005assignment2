@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-// StatusHandler
+// Handler
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
-func StatusHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{http.MethodGet}
 
 	// Switch on the HTTP request method

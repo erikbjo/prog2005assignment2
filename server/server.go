@@ -35,8 +35,8 @@ func Start() {
 
 	// Set up handler endpoints, with and without trailing slash
 	// Status
-	mux.HandleFunc(shared.StatusPath, status.StatusHandler)
-	mux.HandleFunc(shared.StatusPath[:len(shared.StatusPath)-1], status.StatusHandler)
+	mux.HandleFunc(shared.StatusPath, status.Handler)
+	mux.HandleFunc(shared.StatusPath[:len(shared.StatusPath)-1], status.Handler)
 
 	// Registrations
 	mux.HandleFunc(shared.RegistrationsPath, registrations.HandlerWithoutID)
@@ -49,17 +49,17 @@ func Start() {
 	mux.HandleFunc(shared.RegistrationsPath+"{id}", registrations.HandlerWithID)
 
 	// Dashboards
-	mux.HandleFunc(shared.DashboardsPath, dashboards.DashboardsHandlerWithID)
+	mux.HandleFunc(shared.DashboardsPath, dashboards.HandlerWithID)
 	mux.HandleFunc(
 		shared.DashboardsPath[:len(shared.DashboardsPath)-1],
-		dashboards.DashboardsHandlerWithID,
+		dashboards.HandlerWithID,
 	)
 
 	// Notifications
-	mux.HandleFunc(shared.NotificationsPath, notifications.NotificationsHandler)
+	mux.HandleFunc(shared.NotificationsPath, notifications.Handler)
 	mux.HandleFunc(
 		shared.NotificationsPath[:len(shared.NotificationsPath)-1],
-		notifications.NotificationsHandler,
+		notifications.Handler,
 	)
 
 	// Notifications with ID
