@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"assignment-2/db"
 	"fmt"
 	"net/http"
 )
@@ -33,5 +34,9 @@ func DashboardsHandlerWithID(w http.ResponseWriter, r *http.Request) {
 // handleDashboardsGetRequest handles the GET request for the /dashboard/v1/dashboards path.
 // It is used to retrieve the populated dashboards.
 func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "GET request not implemented", http.StatusNotImplemented)
+	if len(r.PathValue("id")) == 0 {
+		http.Error(w, "No document ID was provided.", http.StatusBadRequest)
+	} else {
+		db.DisplayDocument(w, r)
+	}
 }

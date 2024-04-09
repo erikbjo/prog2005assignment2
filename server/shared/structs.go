@@ -47,3 +47,14 @@ type Dashboard struct {
 	} `json:"features"`
 	LastRetrieval string `json:"lastRetrieval"`
 }
+
+type SiteMap struct {
+	Help      string     `json:"help"`
+	Endpoints []Endpoint `json:"siteMap"`
+}
+
+type Endpoint struct {
+	Path        string   `json:"path"`
+	Methods     []string `json:"methods"`
+	Description string   `json:"description"`
+}
