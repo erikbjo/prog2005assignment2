@@ -31,7 +31,7 @@ const (
 /*
 Reads a string from the body in plain-text and sends it to Firestore to be registered as a document.
 */
-func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
+func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	// very generic way of reading body; should be customized to specific use case
 	// e.g. decode the body into dashboard config
 
@@ -90,7 +90,7 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 /*
 Lists all the documents in the dashboardCollection (see constant above) to the user.
 */
-func displayDocument(w http.ResponseWriter, r *http.Request) {
+func DisplayDocument(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("entered displayDocument")
 	// Gets dashboard ID from given URL
 	dashboardId := r.PathValue("id")
