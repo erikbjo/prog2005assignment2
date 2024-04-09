@@ -1,6 +1,7 @@
 package db
 
 import (
+	"assignment-2/server/utils"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
 	"encoding/json"
@@ -31,7 +32,7 @@ const (
 /*
 Reads a string from the body in plain-text and sends it to Firestore to be registered as a document.
 */
-func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
+func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) (string, error) {
 	// very generic way of reading body; should be customized to specific use case
 	// e.g. decode the body into dashboard config
 
@@ -50,23 +51,24 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 	if err := decoder.Decode(&config); err != nil {
 		http.Error(w, "Error while decoding json.", http.StatusInternalServerError)
 		log.Println("Error while decoding json: ", err.Error())
-		return
+		return "", err
 	}
 
 	log.Println("Received request to add document for content ", fmt.Sprint(config))
 	if len(fmt.Sprint(config)) == 0 {
-		log.Println("Content appears to be empty.")
 		http.Error(
 			w,
 			"Your payload (to be stored as document) appears to be empty. Ensure to terminate URI with /.",
 			http.StatusBadRequest,
 		)
-		return
+		return "", fmt.Errorf("content appears to be empty")
 	} else {
+		randomDocID := utils.GenerateRandomID()
+
 		// Add element in embedded structure.
 		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		id, _, err2 := client.Collection(dashboardCollection).Add(
+		_, err2 := client.Collection(dashboardCollection).Doc(randomDocID).Set(
 			ctx,
 			config,
 		)
@@ -77,12 +79,15 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 				w, "Error when adding document "+fmt.Sprint(config)+", Error: "+err2.Error(),
 				http.StatusBadRequest,
 			)
-			return
+			return "", err2
 		} else {
 			// Returns document ID in body
-			log.Println("Document added to dashboardCollection. Identifier of returned document: " + id.ID)
-			http.Error(w, id.ID, http.StatusCreated)
-			return
+			http.Error(w, randomDocID, http.StatusCreated)
+			return randomDocID, fmt.Errorf(
+				"Document added to dashboardCollection. " +
+					"Identifier of returned document: " + randomDocID,
+			)
+
 		}
 	}
 }
@@ -90,7 +95,7 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 /*
 Lists all the documents in the dashboardCollection (see constant above) to the user.
 */
-func DisplayDocument(w http.ResponseWriter, r *http.Request) {
+func DisplayDocument(w http.ResponseWriter, r *http.Request) error {
 	fmt.Println("entered displayDocument")
 	// Gets dashboard ID from given URL
 	dashboardId := r.PathValue("id")
@@ -113,7 +118,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request) {
 				"Error extracting body of returned document of dashboard "+dashboardId,
 				http.StatusInternalServerError,
 			)
-			return
+			return err2
 		}
 
 		// A dashboard map with string keys. Each key is one field, like "content" or "timestamp"
@@ -125,7 +130,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request) {
 				w, "Error while writing response body of dashboard "+dashboardId,
 				http.StatusInternalServerError,
 			)
-			return
+			return err3
 		}
 
 		// Encodes the found document
@@ -145,7 +150,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request) {
 			}
 			if err != nil {
 				log.Printf("Failed to iterate: %v", err)
-				return
+				return err
 			}
 			// Note: You can access the document ID using "doc.Ref.ID"
 
@@ -159,10 +164,11 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request) {
 					"Error while writing response body (Error: "+err.Error()+")",
 					http.StatusInternalServerError,
 				)
-				return
+				return err
 			}
 		}
 	}
+	return nil
 }
 
 func Initialize() {
