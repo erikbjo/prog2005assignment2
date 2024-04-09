@@ -85,7 +85,7 @@ func AddDocument(w http.ResponseWriter, r *http.Request, collection string) (str
 /*
 DisplayDocument Returns a document if specific ID is provided or all documents in collection.
 */
-func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) error {
+func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) (map[string]interface{}, error) {
 	// Gets document ID from given URL
 	documentId := r.PathValue("id")
 
@@ -107,7 +107,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) 
 				"Error extracting body of returned document"+documentId,
 				http.StatusInternalServerError,
 			)
-			return err2
+			return nil, err2
 		}
 
 		// A document map with string keys. Each key is one field, like "content" or "timestamp"
@@ -119,14 +119,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) 
 				w, "Error while writing response body of document "+documentId,
 				http.StatusInternalServerError,
 			)
-			return err3
-		}
-
-		// Encodes the found document
-		encoder := json.NewEncoder(w)
-		if err := encoder.Encode(m); err != nil {
-			http.Error(w, "Error while encoding to json.", http.StatusInternalServerError)
-			log.Println("Error while encoding to json: ", err.Error())
+			return nil, err3
 		}
 	} else {
 		// Collective retrieval of documents
@@ -141,7 +134,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) 
 			}
 			if err != nil {
 				log.Printf("Failed to iterate: %v", err)
-				return err
+				return nil, err
 			}
 			// Note: You can access the document ID using "doc.Ref.ID"
 
@@ -155,11 +148,11 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) 
 					"Error while writing response body (Error: "+err.Error()+")",
 					http.StatusInternalServerError,
 				)
-				return err
+				return nil, err
 			}
 		}
 	}
-	return nil
+	return m, nil
 }
 
 func Initialize() {
