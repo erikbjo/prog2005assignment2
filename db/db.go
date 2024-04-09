@@ -4,8 +4,10 @@ import (
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
 	"encoding/json"
+	"errors"
 	firebase "firebase.google.com/go" // Generic firebase support
 	"fmt"
+	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 	"log"
 	"net/http"
@@ -22,31 +24,9 @@ var client *firestore.Client
 
 // Collection name in Firestore
 const (
-	firebaseAuth = "./serviceAccountKey.json"
-	collection   = "dashboards"
+	firebaseAuth        = "./serviceAccountKey.json"
+	dashboardCollection = "dashboards"
 )
-
-/*
-Handler for all database operations
-*/
-func HandleDB(w http.ResponseWriter, r *http.Request) {
-	implementedMethods := []string{http.MethodPost, http.MethodGet}
-
-	switch r.Method {
-	case http.MethodPost:
-		addDashboardConfigDocument(w, r)
-	case http.MethodGet:
-		displayDocument(w, r)
-	default:
-		http.Error(
-			w, fmt.Sprintf(
-				"REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
-				implementedMethods,
-			), http.StatusNotImplemented,
-		)
-		return
-	}
-}
 
 /*
 Reads a string from the body in plain-text and sends it to Firestore to be registered as a document.
@@ -86,7 +66,7 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 		// Add element in embedded structure.
 		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		id, _, err2 := client.Collection(collection).Add(
+		id, _, err2 := client.Collection(dashboardCollection).Add(
 			ctx,
 			config,
 		)
@@ -100,7 +80,7 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			// Returns document ID in body
-			log.Println("Document added to collection. Identifier of returned document: " + id.ID)
+			log.Println("Document added to dashboardCollection. Identifier of returned document: " + id.ID)
 			http.Error(w, id.ID, http.StatusCreated)
 			return
 		}
@@ -108,7 +88,7 @@ func addDashboardConfigDocument(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-Lists all the documents in the collection (see constant above) to the user.
+Lists all the documents in the dashboardCollection (see constant above) to the user.
 */
 func displayDocument(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("entered displayDocument")
@@ -122,7 +102,7 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 		// Extract individual dashboard
 
 		// Retrieve specific dashboard based on id (Firestore-generated hash)
-		res := client.Collection(collection).Doc(dashboardId)
+		res := client.Collection(dashboardCollection).Doc(dashboardId)
 
 		// Retrieve reference to document
 		doc, err2 := res.Get(ctx)
@@ -155,12 +135,8 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 			log.Println("Error while encoding to json: ", err.Error())
 		}
 	} else {
-		http.Error(w, "Can not retrieve document, no valid ID was provided.", http.StatusBadRequest)
-	}
-	/* Add this again if we want it to be possible to retrieve all documents at once.
-	else {
 		// Collective retrieval of dashboards
-		iter := client.Collection(collection).Documents(ctx) // Loop through all entries in collection "dashboards"
+		iter := client.Collection(dashboardCollection).Documents(ctx) // Loop through all entries in dashboardCollection "dashboards"
 
 		for {
 			doc, err := iter.Next()
@@ -187,7 +163,6 @@ func displayDocument(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	*/
 }
 
 func Initialize() {
