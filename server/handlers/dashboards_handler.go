@@ -3,6 +3,7 @@ package handlers
 import (
 	"assignment-2/db"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -37,6 +38,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	if len(r.PathValue("id")) == 0 {
 		http.Error(w, "No document ID was provided.", http.StatusBadRequest)
 	} else {
-		db.DisplayDocument(w, r)
+		err := db.DisplayDocument(w, r, db.DashboardCollection)
+		if err != nil {
+			log.Println("Error while trying to display dashboard document: ", err.Error())
+			http.Error(w, "Error while trying to display dashboard document.", http.StatusInternalServerError)
+		}
 	}
 }

@@ -25,26 +25,16 @@ var client *firestore.Client
 
 // Collection name in Firestore
 const (
-	firebaseAuth        = "./serviceAccountKey.json"
-	dashboardCollection = "dashboards"
+	firebaseAuth           = "./serviceAccountKey.json"
+	DashboardCollection    = "dashboards"
+	NotificationCollection = "notifications"
 )
 
 /*
-Reads a string from the body in plain-text and sends it to Firestore to be registered as a document.
+AddDocument Reads a string from the body in plain-text and sends it to Firestore to be registered as a
+document.
 */
-func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) (string, error) {
-	// very generic way of reading body; should be customized to specific use case
-	// e.g. decode the body into dashboard config
-
-	/*
-		contentBuffer, err := io.Copy(&contentBuffer)
-		if err != nil {
-			log.Println("Reading payload from body failed.")
-			http.Error(w, "Reading payload failed.", http.StatusInternalServerError)
-			return
-		}
-	*/
-
+func AddDocument(w http.ResponseWriter, r *http.Request, collection string) (string, error) {
 	config := map[string]interface{}{}
 
 	decoder := json.NewDecoder(r.Body)
@@ -63,12 +53,12 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) (string,
 		)
 		return "", fmt.Errorf("content appears to be empty")
 	} else {
-		randomDocID := utils.GenerateRandomID()
+		randomDocumentID := utils.GenerateRandomID()
 
 		// Add element in embedded structure.
 		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		_, err2 := client.Collection(dashboardCollection).Doc(randomDocID).Set(
+		_, err2 := client.Collection(collection).Doc(randomDocumentID).Set(
 			ctx,
 			config,
 		)
@@ -82,10 +72,10 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) (string,
 			return "", err2
 		} else {
 			// Returns document ID in body
-			http.Error(w, randomDocID, http.StatusCreated)
-			return randomDocID, fmt.Errorf(
+			http.Error(w, randomDocumentID, http.StatusCreated)
+			return randomDocumentID, fmt.Errorf(
 				"Document added to dashboardCollection. " +
-					"Identifier of returned document: " + randomDocID,
+					"Identifier of returned document: " + randomDocumentID,
 			)
 
 		}
@@ -93,41 +83,40 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request) (string,
 }
 
 /*
-Lists all the documents in the dashboardCollection (see constant above) to the user.
+DisplayDocument Returns a document if specific ID is provided or all documents in collection.
 */
-func DisplayDocument(w http.ResponseWriter, r *http.Request) error {
-	fmt.Println("entered displayDocument")
-	// Gets dashboard ID from given URL
-	dashboardId := r.PathValue("id")
+func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) error {
+	// Gets document ID from given URL
+	documentId := r.PathValue("id")
 
-	// map to store found dashboard configs
+	// map to store found document
 	var m map[string]interface{}
 
-	if len(dashboardId) != 0 {
-		// Extract individual dashboard
+	if len(documentId) != 0 {
+		// Extract individual document
 
-		// Retrieve specific dashboard based on id (Firestore-generated hash)
-		res := client.Collection(dashboardCollection).Doc(dashboardId)
+		// Retrieve specific document based on id
+		res := client.Collection(collection).Doc(documentId)
 
 		// Retrieve reference to document
 		doc, err2 := res.Get(ctx)
 		if err2 != nil {
-			log.Println("Error extracting body of returned document of dashboard " + dashboardId)
+			log.Println("Error extracting body of returned document" + documentId)
 			http.Error(
 				w,
-				"Error extracting body of returned document of dashboard "+dashboardId,
+				"Error extracting body of returned document"+documentId,
 				http.StatusInternalServerError,
 			)
 			return err2
 		}
 
-		// A dashboard map with string keys. Each key is one field, like "content" or "timestamp"
+		// A document map with string keys. Each key is one field, like "content" or "timestamp"
 		m = doc.Data()
 		_, err3 := fmt.Fprintln(w, m["content"]) // here we retrieve the field containing the originally stored payload
 		if err3 != nil {
-			log.Println("Error while writing response body of dashboard " + dashboardId)
+			log.Println("Error while writing response body of document " + documentId)
 			http.Error(
-				w, "Error while writing response body of dashboard "+dashboardId,
+				w, "Error while writing response body of document "+documentId,
 				http.StatusInternalServerError,
 			)
 			return err3
@@ -140,8 +129,10 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request) error {
 			log.Println("Error while encoding to json: ", err.Error())
 		}
 	} else {
-		// Collective retrieval of dashboards
-		iter := client.Collection(dashboardCollection).Documents(ctx) // Loop through all entries in dashboardCollection "dashboards"
+		// Collective retrieval of documents
+		iter := client.Collection(collection).Documents(
+			ctx,
+		) // Loop through all entries in provided collection
 
 		for {
 			doc, err := iter.Next()
@@ -154,7 +145,7 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request) error {
 			}
 			// Note: You can access the document ID using "doc.Ref.ID"
 
-			// A dashboard map with string keys. Each key is one field, like "content" or "timestamp"
+			// A document map with string keys. Each key is one field, like "content" or "timestamp"
 			m = doc.Data()
 			_, err = fmt.Fprintln(w, m["content"])
 			if err != nil {
