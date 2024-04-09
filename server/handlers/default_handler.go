@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"assignment-2/server/shared"
+	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -19,4 +21,18 @@ func DefaultHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Else, return the site map
+	w.Header().Set("content-type", "application/json")
+	marshaledSiteMap, err := json.MarshalIndent(siteMap, "", "\t")
+	if err != nil {
+		log.Println("Error during JSON encoding: " + err.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write(marshaledSiteMap)
+	if err != nil {
+		log.Println("Failed to write response: " + err.Error())
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+	}
 }

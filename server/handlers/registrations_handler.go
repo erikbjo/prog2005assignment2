@@ -10,9 +10,19 @@ import (
 	"net/http"
 )
 
-var registrationsWithIDEndpoint = shared.Endpoint{}
+var registrationsWithIDEndpoint = shared.Endpoint{
+	Path:        "/registrations/{id}",
+	Description: "This endpoint is used to manage registrations with a specific ID.",
+}
 var registrationsEndpoint = shared.Endpoint{
-	Path: "/registrations",
+	Path:        "/registrations",
+	Description: "This endpoint is used to manage registrations.",
+}
+
+func Init() {
+	log.Println("Initializing registrations handler")
+	siteMap.Endpoints = append(siteMap.Endpoints, registrationsEndpoint)
+	siteMap.Endpoints = append(siteMap.Endpoints, registrationsWithIDEndpoint)
 }
 
 func RegistrationsHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,16 +57,14 @@ func RegistrationsHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func getRegistrationsWithIDEndpoint() shared.Endpoint {
-	return registrationsWithIDEndpoint
-}
-
 func RegistrationsHandlerWithID(w http.ResponseWriter, r *http.Request) {
 	implementedMethods := []string{
 		http.MethodGet,
 		http.MethodPut,
 		http.MethodDelete,
 	}
+
+	registrationsWithIDEndpoint.Methods = implementedMethods
 
 	// Switch on the HTTP request method
 	switch r.Method {
