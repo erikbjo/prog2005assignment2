@@ -1,15 +1,21 @@
 package handlers
 
 import (
+	"assignment-2/server/handlers/registrations"
 	"assignment-2/server/shared"
 	"encoding/json"
 	"log"
 	"net/http"
 )
 
-var siteMap = shared.SiteMap{
+var SiteMap = shared.SiteMap{
 	Help:      "This is the default handler for the server. It redirects to the web page.",
 	Endpoints: []shared.Endpoint{},
+}
+
+func Init() {
+	var1 := registrations.GetEndpointStructs()
+	SiteMap.Endpoints = append(SiteMap.Endpoints, var1...)
 }
 
 // DefaultHandler
@@ -23,7 +29,7 @@ func DefaultHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Else, return the site map
 	w.Header().Set("content-type", "application/json")
-	marshaledSiteMap, err := json.MarshalIndent(siteMap, "", "\t")
+	marshaledSiteMap, err := json.MarshalIndent(SiteMap, "", "\t")
 	if err != nil {
 		log.Println("Error during JSON encoding: " + err.Error())
 		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)

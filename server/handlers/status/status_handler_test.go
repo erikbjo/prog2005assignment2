@@ -1,6 +1,7 @@
-package handlers
+package status
 
 import (
+	"assignment-2/server/handlers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,7 +11,7 @@ import (
 // It tests the GET method for the /status path
 func TestStatusHandler(t *testing.T) {
 	// Use stubs for testing
-	SetStubsForTesting()
+	handlers.SetStubsForTesting()
 
 	// Create tests with different HTTP methods and expected status codes
 	tests := []struct {

@@ -1,4 +1,4 @@
-package handlers
+package dashboards
 
 import (
 	"assignment-2/db"
@@ -41,7 +41,11 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 		err := db.DisplayDocument(w, r, db.DashboardCollection)
 		if err != nil {
 			log.Println("Error while trying to display dashboard document: ", err.Error())
-			http.Error(w, "Error while trying to display dashboard document.", http.StatusInternalServerError)
+			http.Error(
+				w,
+				"Error while trying to display dashboard document.",
+				http.StatusInternalServerError,
+			)
 		}
 	}
 }
