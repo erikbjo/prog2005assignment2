@@ -1,6 +1,6 @@
-// Package handlers
+// Package utils
 // This file contains shared variables and constants used by the handlers
-package handlers
+package utils
 
 import (
 	"assignment-2/server/shared"

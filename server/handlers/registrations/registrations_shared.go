@@ -18,9 +18,10 @@ func checkValidityOfResponseBody(w http.ResponseWriter, r *http.Request) (
 	error,
 ) {
 	var dashboardConfig shared.DashboardConfig
+	var copyOfBody = r.Body
 
 	// Read and parse the body
-	body, err := io.ReadAll(r.Body)
+	body, err := io.ReadAll(copyOfBody)
 	if err != nil {
 		log.Println("Error reading request body: ", err)
 		// Note: We don't return the error here because we want to return a generic error message

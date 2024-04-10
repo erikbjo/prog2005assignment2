@@ -2,18 +2,29 @@ package dashboards
 
 import (
 	"assignment-2/db"
+	"assignment-2/server/shared"
 	"fmt"
 	"log"
 	"net/http"
 )
 
+var implementedMethods = []string{
+	http.MethodGet,
+}
+
+var dashboardsEndpoint = shared.Endpoint{
+	Path:        shared.DashboardsPath,
+	Methods:     implementedMethods,
+	Description: "Endpoint for managing dashboards.",
+}
+
+func GetEndpointStructs() []shared.Endpoint {
+	return []shared.Endpoint{dashboardsEndpoint}
+}
+
 // HandlerWithID handles the /dashboard/v1/dashboards path.
 // It currently only supports GET requests
 func HandlerWithID(w http.ResponseWriter, r *http.Request) {
-	implementedMethods := []string{
-		http.MethodGet,
-	}
-
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -38,7 +49,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	if len(r.PathValue("id")) == 0 {
 		http.Error(w, "No document ID was provided.", http.StatusBadRequest)
 	} else {
-		err := db.DisplayDocument(w, r, db.DashboardCollection)
+		mp, err := db.DisplayDocument(w, r, db.DashboardCollection)
 		if err != nil {
 			log.Println("Error while trying to display dashboard document: ", err.Error())
 			http.Error(
@@ -47,5 +58,6 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 				http.StatusInternalServerError,
 			)
 		}
+		log.Println("Received request with map: ", mp)
 	}
 }

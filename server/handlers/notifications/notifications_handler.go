@@ -1,19 +1,30 @@
 package notifications
 
 import (
+	"assignment-2/server/shared"
 	"fmt"
 	"net/http"
 )
+
+var implementedMethods = []string{
+	http.MethodGet,
+	http.MethodPost,
+}
+
+var notificationsEndpoint = shared.Endpoint{
+	Path:        shared.NotificationsPath,
+	Methods:     implementedMethods,
+	Description: "Endpoint for managing webhooks for event notifications.",
+}
+
+func GetEndpointStructs() []shared.Endpoint {
+	return []shared.Endpoint{notificationsEndpoint}
+}
 
 // Handler handles the /notifications path.
 // It currently supports GET, POST and DELETE requests.
 // Endpoint for managing webhooks for event notifications.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	implementedMethods := []string{
-		http.MethodGet,
-		http.MethodPost,
-	}
-
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:

@@ -1,8 +1,8 @@
 package status
 
 import (
-	"assignment-2/server/handlers"
 	"assignment-2/server/shared"
+	"assignment-2/server/utils"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,12 +11,22 @@ import (
 	"time"
 )
 
+var implementedMethods = []string{http.MethodGet}
+
+var statusEndpoint = shared.Endpoint{
+	Path:        shared.StatusPath,
+	Methods:     implementedMethods,
+	Description: "Endpoint for checking the status of the server and the APIs it relies on.",
+}
+
+func GetEndpointStructs() []shared.Endpoint {
+	return []shared.Endpoint{statusEndpoint}
+}
+
 // Handler
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	implementedMethods := []string{http.MethodGet}
-
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -41,13 +51,13 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
 	// TODO: Implement the MeteoAPI, NotificationDB, Webhooks
 	currentStatus := shared.Status{
-		CountriesAPI:   getStatusCode(handlers.CurrentRestCountriesApi, w),
+		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
 		MeteoAPI:       http.StatusNotImplemented,
-		CurrencyAPI:    getStatusCode(handlers.CurrentCurrencyApi, w),
+		CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
 		NotificationDB: http.StatusNotImplemented,
 		Webhooks:       http.StatusNotImplemented,
 		Version:        shared.Version,
-		Uptime:         math.Round(time.Since(handlers.StartTime).Seconds()),
+		Uptime:         math.Round(time.Since(utils.StartTime).Seconds()),
 	}
 
 	// Marshal the status object to JSON
@@ -71,7 +81,7 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 // If the URL is not reachable, it returns 503.
 func getStatusCode(url string, w http.ResponseWriter) int {
 	// Send a GET request to the URL
-	resp, err := handlers.Client.Get(url)
+	resp, err := utils.Client.Get(url)
 	if err != nil {
 		// If there is an error, return 503
 		return http.StatusServiceUnavailable

@@ -14,7 +14,7 @@ var implementedMethodsWithoutID = []string{
 }
 
 var registrationsEndpointWithoutID = shared.Endpoint{
-	Path:        "/registrations",
+	Path:        shared.RegistrationsPath,
 	Methods:     implementedMethodsWithoutID,
 	Description: "This endpoint is used to manage registrations.",
 }
