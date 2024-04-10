@@ -8,16 +8,19 @@ import (
 	"net/http"
 )
 
+// Implemented methods for the endpoint
 var implementedMethods = []string{
 	http.MethodGet,
 }
 
+// Endpoint for managing dashboards
 var dashboardsEndpoint = shared.Endpoint{
 	Path:        shared.DashboardsPath,
 	Methods:     implementedMethods,
 	Description: "Endpoint for managing dashboards.",
 }
 
+// GetEndpointStructs returns the endpoint struct for the dashboards endpoint.
 func GetEndpointStructs() []shared.Endpoint {
 	return []shared.Endpoint{dashboardsEndpoint}
 }

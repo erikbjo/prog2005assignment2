@@ -7,18 +7,21 @@ import (
 	"net/http"
 )
 
+// Implemented methods for the endpoint without ID
 var implementedMethodsWithoutID = []string{
 	http.MethodGet,
 	http.MethodHead,
 	http.MethodPost,
 }
 
+// Endpoint for managing registrations without a specific ID
 var registrationsEndpointWithoutID = shared.Endpoint{
 	Path:        shared.RegistrationsPath,
 	Methods:     implementedMethodsWithoutID,
 	Description: "This endpoint is used to manage registrations.",
 }
 
+// HandlerWithoutID handles the /registrations/v1/registrations path.
 func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 	// Switch on the HTTP request method
 	switch r.Method {

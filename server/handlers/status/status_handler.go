@@ -11,14 +11,17 @@ import (
 	"time"
 )
 
+// implementedMethods is a list of the implemented HTTP methods for the status endpoint.
 var implementedMethods = []string{http.MethodGet}
 
+// statusEndpoint is the endpoint for checking the status of the server and the APIs it relies on.
 var statusEndpoint = shared.Endpoint{
 	Path:        shared.StatusPath,
 	Methods:     implementedMethods,
 	Description: "Endpoint for checking the status of the server and the APIs it relies on.",
 }
 
+// GetEndpointStructs returns the endpoint for the status handler.
 func GetEndpointStructs() []shared.Endpoint {
 	return []shared.Endpoint{statusEndpoint}
 }

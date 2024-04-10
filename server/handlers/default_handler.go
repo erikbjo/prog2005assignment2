@@ -11,12 +11,16 @@ import (
 	"net/http"
 )
 
+// SiteMap
+// Site map for the server. Contains all the endpoints and their descriptions.
 var SiteMap = shared.SiteMap{
 	Help: "This is the default handler for the server. " +
 		"Maybe you typed the wrong path or are looking for the web page. Go to '/' for the web page.",
 	Endpoints: []shared.Endpoint{},
 }
 
+// Init
+// Initializes the site map with all the endpoints from the different handlers.
 func Init() {
 	endpointsFromRegistrations := registrations.GetEndpointStructs()
 	endpointsFromDashboards := dashboards.GetEndpointStructs()

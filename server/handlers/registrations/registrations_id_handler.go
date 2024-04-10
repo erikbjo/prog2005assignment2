@@ -8,18 +8,21 @@ import (
 	"net/http"
 )
 
+// Implemented methods for the endpoint with ID
 var implementedMethodsWithID = []string{
 	http.MethodGet,
 	http.MethodPut,
 	http.MethodDelete,
 }
 
+// Endpoint for managing registrations with a specific ID
 var registrationsEndpointWithID = shared.Endpoint{
 	Path:        shared.RegistrationsPath + "{id}",
 	Methods:     implementedMethodsWithID,
 	Description: "This endpoint is used to manage registrations with a specific ID.",
 }
 
+// HandlerWithID handles the /registrations/v1/registrations/{id} path.
 func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 	// Switch on the HTTP request method
 	switch r.Method {
