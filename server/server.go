@@ -56,14 +56,14 @@ func Start() {
 	)
 
 	// Notifications
-	mux.HandleFunc(shared.NotificationsPath, notifications.Handler)
+	mux.HandleFunc(shared.NotificationsPath, notifications.HandlerWithoutID)
 	mux.HandleFunc(
 		shared.NotificationsPath[:len(shared.NotificationsPath)-1],
-		notifications.Handler,
+		notifications.HandlerWithoutID,
 	)
 
 	// Notifications with ID
-	mux.HandleFunc(shared.NotificationsPath+"{id}", notifications.NotificationsHandlerWithID)
+	mux.HandleFunc(shared.NotificationsPath+"{id}", notifications.HandlerWithID)
 
 	fs := http.FileServer(http.Dir("web"))
 	mux.Handle("/web/", http.StripPrefix("/web/", fs))

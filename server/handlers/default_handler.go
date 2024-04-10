@@ -1,21 +1,36 @@
 package handlers
 
 import (
+	"assignment-2/server/handlers/dashboards"
+	"assignment-2/server/handlers/notifications"
 	"assignment-2/server/handlers/registrations"
+	"assignment-2/server/handlers/status"
 	"assignment-2/server/shared"
 	"encoding/json"
 	"log"
 	"net/http"
 )
 
+// SiteMap
+// Site map for the server. Contains all the endpoints and their descriptions.
 var SiteMap = shared.SiteMap{
-	Help:      "This is the default handler for the server. It redirects to the web page.",
+	Help: "This is the default handler for the server. " +
+		"Maybe you typed the wrong path or are looking for the web page. Go to '/' for the web page.",
 	Endpoints: []shared.Endpoint{},
 }
 
+// Init
+// Initializes the site map with all the endpoints from the different handlers.
 func Init() {
-	var1 := registrations.GetEndpointStructs()
-	SiteMap.Endpoints = append(SiteMap.Endpoints, var1...)
+	endpointsFromRegistrations := registrations.GetEndpointStructs()
+	endpointsFromDashboards := dashboards.GetEndpointStructs()
+	endpointsFromNotifications := notifications.GetEndpointStructs()
+	endpointsFromStatus := status.GetEndpointStructs()
+
+	SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromRegistrations...)
+	SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromDashboards...)
+	SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromNotifications...)
+	SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromStatus...)
 }
 
 // DefaultHandler

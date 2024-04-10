@@ -1,8 +1,9 @@
 package status
 
 import (
-	"assignment-2/server/handlers"
+	"assignment-2/db"
 	"assignment-2/server/shared"
+	"assignment-2/server/utils"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,12 +12,25 @@ import (
 	"time"
 )
 
+// implementedMethods is a list of the implemented HTTP methods for the status endpoint.
+var implementedMethods = []string{http.MethodGet}
+
+// statusEndpoint is the endpoint for checking the status of the server and the APIs it relies on.
+var statusEndpoint = shared.Endpoint{
+	Path:        shared.StatusPath,
+	Methods:     implementedMethods,
+	Description: "Endpoint for checking the status of the server and the APIs it relies on.",
+}
+
+// GetEndpointStructs returns the endpoint for the status handler.
+func GetEndpointStructs() []shared.Endpoint {
+	return []shared.Endpoint{statusEndpoint}
+}
+
 // Handler
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	implementedMethods := []string{http.MethodGet}
-
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -39,15 +53,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
-	// TODO: Implement the MeteoAPI, NotificationDB, Webhooks
+	// TODO: Implement the MeteoAPI, FirebaseDB, Webhooks
 	currentStatus := shared.Status{
-		CountriesAPI:   getStatusCode(handlers.CurrentRestCountriesApi, w),
-		MeteoAPI:       http.StatusNotImplemented,
-		CurrencyAPI:    getStatusCode(handlers.CurrentCurrencyApi, w),
-		NotificationDB: http.StatusNotImplemented,
+		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
+		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
+		CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
+		DashboardDB:    db.GetStatusCodeOfCollection(w, db.DashboardCollection),
+		NotificationDB: db.GetStatusCodeOfCollection(w, db.NotificationCollection),
 		Webhooks:       http.StatusNotImplemented,
 		Version:        shared.Version,
-		Uptime:         math.Round(time.Since(handlers.StartTime).Seconds()),
+		Uptime:         math.Round(time.Since(utils.StartTime).Seconds()),
 	}
 
 	// Marshal the status object to JSON
@@ -70,8 +85,17 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 // getStatusCode returns the status code of the given URL.
 // If the URL is not reachable, it returns 503.
 func getStatusCode(url string, w http.ResponseWriter) int {
+	switch url {
+	case utils.CurrentRestCountriesApi:
+		url = url + "all"
+	case utils.CurrentCurrencyApi:
+		url = url + "nok"
+	case utils.CurrentMeteoApi:
+		url = url + "?latitude=60.7957&longitude=10.6915"
+	}
+
 	// Send a GET request to the URL
-	resp, err := handlers.Client.Get(url)
+	resp, err := utils.Client.Get(url)
 	if err != nil {
 		// If there is an error, return 503
 		return http.StatusServiceUnavailable

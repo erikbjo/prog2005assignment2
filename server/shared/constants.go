@@ -22,15 +22,21 @@ const NotificationsPath = DashboardPath + "/notifications/"
 const StatusPath = DashboardPath + "/status/"
 
 // RestCountriesApi Christopher's RestCountries API
-const RestCountriesApi = "http://129.241.150.113:8080/v3.1"
+const RestCountriesApi = "http://129.241.150.113:8080/v3.1/"
 
 // TestRestCountriesApi Local stub for RestCountries API
-const TestRestCountriesApi = "http://localhost:8080/test/restcountries"
+const TestRestCountriesApi = "http://localhost:8080/test/restcountries/"
+
+// MeteoApi Open-Meteo API for weather forecast
+const MeteoApi = "https://api.open-meteo.com/v1/forecast/"
 
 // CurrencyApi Christopher's Currency API
 const CurrencyApi = "http://129.241.150.113:9090/currency/"
 
 // TestCurrencyApi Local stub for Currency API
-const TestCurrencyApi = "http://localhost:8080/test/currency"
+const TestCurrencyApi = "http://localhost:8080/test/currency/"
+
+// TestMeteoApi Local stub for Meteo API
+const TestMeteoApi = "http://localhost:8080/test/meteo/"
 
 /* https://open-meteo.com/en/features#available-apis */
