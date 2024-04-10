@@ -1,8 +1,10 @@
 package registrations
 
 import (
+	"assignment-2/db"
 	"assignment-2/server/shared"
 	"assignment-2/server/utils"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -53,12 +55,36 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	log.Println("Received request to get registration with ID ", id)
+	log.Printf("Received request to get registration with ID %s\n", id)
 
 	// Get the registration with the provided ID
 	// TODO: Implement getting the registration with the provided ID
+	dashboard, err2 := db.GetDocument(w, r, db.DashboardCollection)
+	if err2 != nil {
+		http.Error(w, "Error while trying to receive document from db.", http.StatusInternalServerError)
+		log.Println("Error while trying to receive document from db: ", err2.Error())
+		return
+	}
 
-	http.Error(w, "GET request not implemented", http.StatusNotImplemented)
+	// Marshal the status object to JSON
+	marshaled, err3 := json.MarshalIndent(
+		dashboard,
+		"",
+		"\t",
+	)
+	if err3 != nil {
+		log.Println("Error during JSON encoding: " + err3.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
+
+	// Write the JSON to the response
+	_, err4 := w.Write(marshaled)
+	if err4 != nil {
+		log.Println("Failed to write response: " + err4.Error())
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request) {
