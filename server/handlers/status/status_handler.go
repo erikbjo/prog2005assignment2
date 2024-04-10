@@ -1,6 +1,7 @@
 package status
 
 import (
+	"assignment-2/db"
 	"assignment-2/server/shared"
 	"assignment-2/server/utils"
 	"encoding/json"
@@ -52,12 +53,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
-	// TODO: Implement the MeteoAPI, NotificationDB, Webhooks
+	// TODO: Implement the MeteoAPI, FirebaseDB, Webhooks
 	currentStatus := shared.Status{
 		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
-		MeteoAPI:       http.StatusNotImplemented,
+		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
 		CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
-		NotificationDB: http.StatusNotImplemented,
+		DashboardDB:    db.GetStatusCodeOfCollection(w, db.DashboardCollection),
+		NotificationDB: db.GetStatusCodeOfCollection(w, db.NotificationCollection),
 		Webhooks:       http.StatusNotImplemented,
 		Version:        shared.Version,
 		Uptime:         math.Round(time.Since(utils.StartTime).Seconds()),
@@ -83,6 +85,15 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 // getStatusCode returns the status code of the given URL.
 // If the URL is not reachable, it returns 503.
 func getStatusCode(url string, w http.ResponseWriter) int {
+	switch url {
+	case utils.CurrentRestCountriesApi:
+		url = url + "all"
+	case utils.CurrentCurrencyApi:
+		url = url + "nok"
+	case utils.CurrentMeteoApi:
+		url = url + "?latitude=60.7957&longitude=10.6915"
+	}
+
 	// Send a GET request to the URL
 	resp, err := utils.Client.Get(url)
 	if err != nil {

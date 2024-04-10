@@ -6,6 +6,7 @@ type Status struct {
 	CountriesAPI   int     `json:"countries_api"`
 	MeteoAPI       int     `json:"meteo_api"`
 	CurrencyAPI    int     `json:"currency_api"`
+	DashboardDB    int     `json:"dashboard_db"`
 	NotificationDB int     `json:"notification_db"`
 	Webhooks       int     `json:"webhooks"`
 	Version        string  `json:"version"`

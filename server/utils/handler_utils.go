@@ -12,6 +12,7 @@ import (
 var (
 	CurrentRestCountriesApi = shared.RestCountriesApi
 	CurrentCurrencyApi      = shared.CurrencyApi
+	CurrentMeteoApi         = shared.MeteoApi
 )
 
 // StartTime is the time the server started
@@ -27,4 +28,5 @@ func SetStubsForTesting() {
 	// TODO: Implement the stubs to test
 	CurrentRestCountriesApi = shared.TestRestCountriesApi
 	CurrentCurrencyApi = shared.TestCurrencyApi
+	CurrentMeteoApi = shared.TestMeteoApi
 }

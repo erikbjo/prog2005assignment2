@@ -30,6 +30,30 @@ const (
 	NotificationCollection = "notifications"
 )
 
+func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int {
+	// Check if the Firestore client is initialized
+	if client == nil {
+		// If client is nil, return 503 Service Unavailable status code
+		http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+		return http.StatusServiceUnavailable
+	}
+
+	// Check if the Firestore client is connected by performing a simple query
+	iter := client.Collection(collection).Documents(ctx)
+	defer iter.Stop()
+
+	// Attempt to retrieve the first document
+	_, err := iter.Next()
+	if err != nil {
+		// If there's an error connecting to the database, return 503 Service Unavailable status code
+		http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+		return http.StatusServiceUnavailable
+	}
+
+	// If code reaches this point, the database is available
+	return http.StatusOK
+}
+
 /*
 AddDocument Reads a string from the body in plain-text and sends it to Firestore to be registered as a
 document.
@@ -85,7 +109,11 @@ func AddDocument(w http.ResponseWriter, r *http.Request, collection string) (str
 /*
 DisplayDocument Returns a document if specific ID is provided or all documents in collection.
 */
-func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) (map[string]interface{}, error) {
+func DisplayDocument(
+	w http.ResponseWriter,
+	r *http.Request,
+	collection string,
+) (map[string]interface{}, error) {
 	// Gets document ID from given URL
 	documentId := r.PathValue("id")
 
@@ -112,7 +140,10 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) 
 
 		// A document map with string keys. Each key is one field, like "content" or "timestamp"
 		m = doc.Data()
-		_, err3 := fmt.Fprintln(w, m["content"]) // here we retrieve the field containing the originally stored payload
+		_, err3 := fmt.Fprintln(
+			w,
+			m["content"],
+		) // here we retrieve the field containing the originally stored payload
 		if err3 != nil {
 			log.Println("Error while writing response body of document " + documentId)
 			http.Error(
