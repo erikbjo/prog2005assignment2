@@ -48,14 +48,18 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collecti
 		return "", nil, err
 	}
 
-	currentTime := time.Now()
-	content.LastChange = currentTime
 	log.Println("Received request to add document for content: ", content)
 	if content == nil {
 		log.Println("content appears to be empty")
 		return "", nil, fmt.Errorf("content appears to be empty")
 	} else {
 		randomDocumentID := utils.GenerateRandomID()
+
+		// Sets the ID field to the new document ID
+		content.ID = randomDocumentID
+
+		// Sets the lastChange field to the current time stamp
+		content.LastChange = time.Now()
 
 		// Add element in embedded structure.
 		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
@@ -149,6 +153,7 @@ func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) 
 }
 
 func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) error {
+	// TODO: Update lastChange field to new current time
 	var newContent []firestore.Update
 
 	decoder := json.NewDecoder(r.Body)
