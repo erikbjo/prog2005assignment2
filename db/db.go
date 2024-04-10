@@ -35,17 +35,17 @@ AddDocument Reads a string from the body in plain-text and sends it to Firestore
 document.
 */
 func AddDocument(w http.ResponseWriter, r *http.Request, collection string) (string, error) {
-	config := map[string]interface{}{}
+	content := map[string]interface{}{}
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&config); err != nil {
+	if err := decoder.Decode(&content); err != nil {
 		http.Error(w, "Error while decoding json.", http.StatusInternalServerError)
 		log.Println("Error while decoding json: ", err.Error())
 		return "", err
 	}
 
-	log.Println("Received request to add document for content ", fmt.Sprint(config))
-	if len(fmt.Sprint(config)) == 0 {
+	log.Println("Received request to add document for content ", fmt.Sprint(content))
+	if content == nil {
 		http.Error(
 			w,
 			"Your payload (to be stored as document) appears to be empty. Ensure to terminate URI with /.",
@@ -60,13 +60,13 @@ func AddDocument(w http.ResponseWriter, r *http.Request, collection string) (str
 		// and illustrates how you can use Firestore features such as Firestore timestamps.
 		_, err2 := client.Collection(collection).Doc(randomDocumentID).Set(
 			ctx,
-			config,
+			content,
 		)
 		if err2 != nil {
 			// Error handling
-			log.Println("Error when adding document " + fmt.Sprint(config) + ", Error: " + err2.Error())
+			log.Println("Error when adding document " + fmt.Sprint(content) + ", Error: " + err2.Error())
 			http.Error(
-				w, "Error when adding document "+fmt.Sprint(config)+", Error: "+err2.Error(),
+				w, "Error when adding document "+fmt.Sprint(content)+", Error: "+err2.Error(),
 				http.StatusBadRequest,
 			)
 			return "", err2
@@ -153,6 +153,99 @@ func DisplayDocument(w http.ResponseWriter, r *http.Request, collection string) 
 		}
 	}
 	return m, nil
+}
+
+func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) error {
+	var newContent []firestore.Update
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&newContent); err != nil {
+		http.Error(w, "Error while decoding json.", http.StatusInternalServerError)
+		log.Println("Error while decoding json: ", err.Error())
+		return err
+	}
+	if newContent == nil {
+		http.Error(
+			w,
+			"Your payload (to be stored as document) appears to be empty. Ensure to terminate URI with /.",
+			http.StatusBadRequest,
+		)
+		return fmt.Errorf("content appears to be empty")
+	}
+
+	// Get ID from the URL provided in the request
+	documentId := r.PathValue("id")
+
+	// Add element in embedded structure.
+	// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
+	// and illustrates how you can use Firestore features such as Firestore timestamps.
+	_, err2 := client.Collection(collection).Doc(documentId).Update(ctx, newContent)
+	if err2 != nil {
+		// Error handling
+		log.Println("Error when adding document " + fmt.Sprint(newContent) + ", Error: " + err2.Error())
+		http.Error(
+			w, "Error when adding document "+fmt.Sprint(newContent)+", Error: "+err2.Error(),
+			http.StatusBadRequest,
+		)
+		return err2
+	}
+	return nil
+}
+
+// DeleteDocument with the provided ID, if found.
+func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) error {
+	documentId := r.PathValue("id")
+
+	// Checks if a document with the provided ID exists in the collection
+	if ok, err := documentExists(ctx, collection, documentId); ok && err == nil {
+		// Delete specified document
+		_, err2 := client.Collection(collection).Doc(documentId).Delete(ctx)
+		if err2 != nil {
+			log.Println("Error extracting body of returned document" + documentId)
+			http.Error(
+				w,
+				"Error extracting body of returned document"+documentId,
+				http.StatusInternalServerError,
+			)
+			return err2
+		}
+	} else if !ok && err == nil {
+		http.Error(
+			w, fmt.Sprintf(
+				"A document with the provided ID: %s, was not found in the collection: %s.\n",
+				documentId, collection,
+			), http.StatusBadRequest,
+		)
+		log.Printf(
+			"A document with the provided ID: %s, was not found in the collection: %s.\n",
+			documentId, collection,
+		)
+	} else {
+		http.Error(w, "Error while trying to find document.", http.StatusInternalServerError)
+		log.Println("Error while trying to find document: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// documentExists checks if a document exists in a Firestore collection.
+func documentExists(ctx context.Context, collection, documentID string) (bool, error) {
+	iter := client.Collection(collection).Where("id", "==", documentID).Documents(ctx)
+	defer iter.Stop()
+
+	// Iterate over the result to see if any document matches the ID.
+	for {
+		_, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			// Document not found.
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+		// Document found.
+		return true, nil
+	}
 }
 
 func Initialize() {
