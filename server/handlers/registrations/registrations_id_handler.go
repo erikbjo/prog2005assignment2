@@ -59,9 +59,13 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 
 	// Get the registration with the provided ID
 	// TODO: Implement getting the registration with the provided ID
-	dashboard, err2 := db.GetDocument(w, r, db.DashboardCollection)
+	dashboard, err2 := db.GetDocument(id, db.DashboardCollection)
 	if err2 != nil {
-		http.Error(w, "Error while trying to receive document from db.", http.StatusInternalServerError)
+		http.Error(
+			w,
+			"Error while trying to receive document from db.",
+			http.StatusInternalServerError,
+		)
 		log.Println("Error while trying to receive document from db: ", err2.Error())
 		return
 	}

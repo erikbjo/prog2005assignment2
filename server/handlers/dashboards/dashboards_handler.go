@@ -3,6 +3,7 @@ package dashboards
 import (
 	"assignment-2/db"
 	"assignment-2/server/shared"
+	"assignment-2/server/utils"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -50,38 +51,40 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 // handleDashboardsGetRequest handles the GET request for the /dashboard/v1/dashboards path.
 // It is used to retrieve the populated dashboards.
 func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
-	if len(r.PathValue("id")) == 0 {
-		http.Error(w, "No document ID was provided.", http.StatusBadRequest)
-	} else {
-		mp, err := db.GetDocument(w, r, db.DashboardCollection)
-		if err != nil {
-			log.Println("Error while trying to display dashboard document: ", err.Error())
-			http.Error(
-				w,
-				"Error while trying to display dashboard document.",
-				http.StatusInternalServerError,
-			)
-		}
-		log.Println("Received request with map: ", mp)
+	id, err := utils.GetIDFromRequest(r)
 
-		// Marshal the status object to JSON
-		marshaled, err3 := json.MarshalIndent(
-			mp,
-			"",
-			"\t",
+	mp, err := db.GetDocument(id, db.DashboardCollection)
+	if err != nil {
+		log.Println("Error while trying to display dashboard document: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to display dashboard document.",
+			http.StatusInternalServerError,
 		)
-		if err3 != nil {
-			log.Println("Error during JSON encoding: " + err3.Error())
-			http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
-			return
-		}
+	}
 
-		// Write the JSON to the response
-		_, err4 := w.Write(marshaled)
-		if err4 != nil {
-			log.Println("Failed to write response: " + err4.Error())
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
-			return
-		}
+	// mp is map[string]interface {} type
+	// convert it to shared.DashboardConfig type
+
+	var dashboard shared.DashboardConfig
+	err = json.Unmarshal([]byte(mp.(string)), &dashboard)
+	if err != nil {
+		log.Println("Error while trying to unmarshal dashboard document: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to unmarshal dashboard document.",
+			http.StatusInternalServerError,
+		)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(dashboard)
+	if err != nil {
+		log.Println("Error while trying to encode dashboard document: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to encode dashboard document.",
+			http.StatusInternalServerError,
+		)
 	}
 }
