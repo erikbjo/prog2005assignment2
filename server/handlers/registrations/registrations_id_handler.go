@@ -93,18 +93,21 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	body, err := checkValidityOfResponseBody(w, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	log.Println(body)
+	// TODO: This still leads to EOF later in function
+	/*
+		body, err := checkValidityOfResponseBody(w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+	*/
 
 	log.Println("Received request to update registration with ID ", id)
 
-	http.Error(w, "POST request not implemented", http.StatusNotImplemented)
+	err2 := db.UpdateDocument(w, r, db.DashboardCollection)
+	if err2 != nil {
+		http.Error(w, err2.Error(), http.StatusInternalServerError)
+	}
 }
 
 func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) {
