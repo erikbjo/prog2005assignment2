@@ -93,6 +93,7 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	// TODO: This still leads to EOF later in function
 	/*
 		body, err := checkValidityOfResponseBody(w, r)
@@ -119,5 +120,9 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 
 	log.Println("Received request to delete registration with ID ", id)
 
-	http.Error(w, "DELETE request not implemented", http.StatusNotImplemented)
+	err2 := db.DeleteDocument(w, r, db.DashboardCollection)
+	if err2 != nil {
+		http.Error(w, "Error while trying to delete document.", http.StatusInternalServerError)
+		return
+	}
 }
