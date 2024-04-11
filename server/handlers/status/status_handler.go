@@ -54,7 +54,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
-	// TODO: Implement the MeteoAPI, FirebaseDB, Webhooks
+	// TODO: Implement the Webhooks
+	// TODO: Implement firebase testing/mocking
 	currentStatus := shared.Status{
 		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
 		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),

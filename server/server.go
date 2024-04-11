@@ -9,6 +9,7 @@ import (
 	"assignment-2/server/handlers/status"
 	"assignment-2/server/shared"
 	"assignment-2/server/utils"
+	"assignment-2/test/stubs"
 	"log"
 	"net/http"
 )
@@ -70,6 +71,11 @@ func Start() {
 
 	// Default, redirect to /web/
 	mux.HandleFunc("/", handlers.DefaultHandler)
+
+	// Set up stubs for testing
+	mux.HandleFunc(shared.TestMeteoApi, stubs.MeteoHandler)
+	mux.HandleFunc(shared.TestRestCountriesApi, stubs.RestCountriesHandler)
+	mux.HandleFunc(shared.TestCurrencyApi, stubs.CurrencyHandler)
 
 	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
 	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
