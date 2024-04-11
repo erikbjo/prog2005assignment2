@@ -227,46 +227,42 @@ func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) e
 
 // DeleteDocument with the provided ID, if found.
 func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) error {
-	documentId := r.PathValue("id")
+	documentID := r.PathValue("id")
 
 	// Checks if a document with the provided ID exists in the collection
-	if ok, err := documentExists(ctx, collection, documentId); ok && err == nil {
+	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
 		// Delete specified document
-		_, err2 := client.Collection(collection).Doc(documentId).Delete(ctx)
+		_, err2 := client.Collection(collection).Doc(documentID).Delete(ctx)
 		if err2 != nil {
-			log.Println("Error while deleting document:" + documentId)
+			log.Println("Error while deleting document:" + documentID)
 			return err2
 		}
 	} else if !ok && err == nil {
 		log.Printf(
 			"A document with the provided ID: %s, was not found in the collection: %s.\n",
-			documentId, collection,
+			documentID, collection,
 		)
 	} else {
 		log.Println("Error while trying to find document: ", err.Error())
 		return err
 	}
+	log.Printf("The document: %s, was successfully deleted.", documentID)
 	return nil
 }
 
 // documentExists checks if a document exists in a Firestore collection.
 func documentExists(ctx context.Context, collection, documentID string) (bool, error) {
-	iter := client.Collection(collection).Where("id", "==", documentID).Documents(ctx)
-	defer iter.Stop()
+	// Reference the document using its document ID
+	docRef := client.Collection(collection).Doc(documentID)
 
-	// Iterate over the result to see if any document matches the ID.
-	for {
-		_, err := iter.Next()
-		if errors.Is(err, iterator.Done) {
-			// Document not found.
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-		// Document found.
-		return true, nil
+	// Get a snapshot of the document
+	snapshot, err := docRef.Get(ctx)
+	if err != nil {
+		return false, err
 	}
+
+	// Returns true if the document exists and false if not
+	return snapshot.Exists(), nil
 }
 
 func Initialize() {
