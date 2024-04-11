@@ -47,13 +47,9 @@ type Dashboard struct {
 			Latitude  float64 `json:"latitude"`
 			Longitude float64 `json:"longitude"`
 		} `json:"coordinates"`
-		Population       int     `json:"population"`
-		Area             float64 `json:"area"`
-		TargetCurrencies struct {
-			EUR float64 `json:"EUR"`
-			USD float64 `json:"USD"`
-			SEK float64 `json:"SEK"`
-		} `json:"targetCurrencies"`
+		Population       int                `json:"population"`
+		Area             float64            `json:"area"`
+		TargetCurrencies map[string]float64 `json:"targetCurrencies"`
 	} `json:"features"`
 	LastRetrieval string `json:"lastRetrieval"`
 }
