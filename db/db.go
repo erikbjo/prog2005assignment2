@@ -154,27 +154,32 @@ func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) 
 
 func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) error {
 	// TODO: Update lastChange field to new current time
-	var newContent []firestore.Update
+	var updates map[string]interface{}
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&newContent); err != nil {
+	if err := decoder.Decode(&updates); err != nil {
 		log.Println("Error while decoding json: ", err.Error())
 		return err
 	}
-	if newContent == nil {
+	if updates == nil {
 		return fmt.Errorf("content appears to be empty")
 	}
 
 	// Get ID from the URL provided in the request
-	documentId := r.PathValue("id")
+	documentID := r.PathValue("id")
 
+	// Adds id and lastChange field
+	updates["id"] = documentID
+	updates["lastChange"] = time.Now()
+
+	// TODO: maybe go back to update function, use a loop to update each key and value
 	// Add element in embedded structure.
 	// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
 	// and illustrates how you can use Firestore features such as Firestore timestamps.
-	_, err2 := client.Collection(collection).Doc(documentId).Update(ctx, newContent)
+	_, err2 := client.Collection(collection).Doc(documentID).Set(ctx, updates)
 	if err2 != nil {
 		// Error handling
-		log.Println("Error when adding document " + fmt.Sprint(newContent) + ", Error: " + err2.Error())
+		log.Printf("Error when updating document. Error: %s", err2.Error())
 		return err2
 	}
 	return nil
