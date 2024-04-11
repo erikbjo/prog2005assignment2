@@ -3,6 +3,7 @@ package dashboards
 import (
 	"assignment-2/db"
 	"assignment-2/server/shared"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -52,7 +53,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	if len(r.PathValue("id")) == 0 {
 		http.Error(w, "No document ID was provided.", http.StatusBadRequest)
 	} else {
-		mp, err := db.DisplayDocument(w, r, db.DashboardCollection)
+		mp, err := db.GetDocument(w, r, db.DashboardCollection)
 		if err != nil {
 			log.Println("Error while trying to display dashboard document: ", err.Error())
 			http.Error(
@@ -62,5 +63,25 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 			)
 		}
 		log.Println("Received request with map: ", mp)
+
+		// Marshal the status object to JSON
+		marshaled, err3 := json.MarshalIndent(
+			mp,
+			"",
+			"\t",
+		)
+		if err3 != nil {
+			log.Println("Error during JSON encoding: " + err3.Error())
+			http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+			return
+		}
+
+		// Write the JSON to the response
+		_, err4 := w.Write(marshaled)
+		if err4 != nil {
+			log.Println("Failed to write response: " + err4.Error())
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			return
+		}
 	}
 }

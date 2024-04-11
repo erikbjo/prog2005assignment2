@@ -1,0 +1,21 @@
+{
+  "latitude": 62,
+  "longitude": 10,
+  "generationtime_ms": 0.018000602722168,
+  "utc_offset_seconds": 0,
+  "timezone": "GMT",
+  "timezone_abbreviation": "GMT",
+  "elevation": 801,
+  "current_units": {
+    "time": "iso8601",
+    "interval": "seconds",
+    "temperature_2m": "°C",
+    "precipitation": "mm"
+  },
+  "current": {
+    "time": "2024-04-11T09:00",
+    "interval": 900,
+    "temperature_2m": 0.9,
+    "precipitation": 0
+  }
+}

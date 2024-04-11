@@ -31,6 +31,7 @@ func GetEndpointStructs() []shared.Endpoint {
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
 func Handler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received request: " + r.Method + " " + r.URL.Path)
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -53,7 +54,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
-	// TODO: Implement the MeteoAPI, FirebaseDB, Webhooks
+	// TODO: Implement the Webhooks
+	// TODO: Implement firebase testing/mocking
 	currentStatus := shared.Status{
 		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
 		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),

@@ -1,5 +1,7 @@
 package shared
 
+import "time"
+
 // A Status struct to hold the status of the server, including the status of the APIs and the version
 // of the server.
 type Status struct {
@@ -13,7 +15,13 @@ type Status struct {
 	Uptime         float64 `json:"uptime"`
 }
 
+type RegistrationResponse struct {
+	ID         string    `json:"id"`
+	LastChange time.Time `json:"lastChange"`
+}
+
 type DashboardConfig struct {
+	ID       string `json:"id"`
 	Country  string `json:"country"`
 	IsoCode  string `json:"isoCode"`
 	Features struct {
@@ -25,6 +33,7 @@ type DashboardConfig struct {
 		Area             bool     `json:"area"`
 		TargetCurrencies []string `json:"targetCurrencies"`
 	} `json:"features"`
+	LastChange time.Time `json:"lastChange"`
 }
 
 type Dashboard struct {
