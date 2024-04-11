@@ -10,7 +10,6 @@ const DefaultPort = "8080"
 
 // GetPort Get the port from the environment variable, or use the default port
 func GetPort() string {
-
 	// Get the PORT environment variable
 	port := os.Getenv("PORT")
 

@@ -50,11 +50,7 @@ func Start() {
 	mux.HandleFunc(shared.RegistrationsPath+"{id}", registrations.HandlerWithID)
 
 	// Dashboards
-	mux.HandleFunc(shared.DashboardsPath, dashboards.HandlerWithID)
-	mux.HandleFunc(
-		shared.DashboardsPath[:len(shared.DashboardsPath)-1],
-		dashboards.HandlerWithID,
-	)
+	mux.HandleFunc(shared.DashboardsPath+"{id}", dashboards.HandlerWithID)
 
 	// Notifications
 	mux.HandleFunc(shared.NotificationsPath, notifications.HandlerWithoutID)

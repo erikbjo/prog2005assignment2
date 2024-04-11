@@ -107,26 +107,22 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collecti
 GetDocument Returns the document that matches with the provided ID from a collection
 */
 func GetDocument(
-	w http.ResponseWriter,
-	r *http.Request,
+	id string,
 	collection string,
 ) (interface{}, error) {
-	// Gets document ID from given URL
-	documentId := r.PathValue("id")
-
 	// interface of document content
 	var data interface{}
 
-	if len(documentId) != 0 {
+	if len(id) != 0 {
 		// Extract individual document
 
 		// Retrieve specific document based on id
-		res := client.Collection(collection).Doc(documentId)
+		res := client.Collection(collection).Doc(id)
 
 		// Retrieve reference to document
 		doc, err2 := res.Get(ctx)
 		if err2 != nil {
-			log.Println("Error extracting body of returned document" + documentId)
+			log.Println("Error extracting body of returned document" + id)
 			return nil, err2
 		}
 
@@ -148,7 +144,10 @@ func GetDocument(
 /*
 GetAllDocuments Returns all documents in collection.
 */
-func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) ([]interface{}, error) {
+func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) (
+	[]interface{},
+	error,
+) {
 	// interface of document content
 	var data interface{}
 	var allData []interface{}
@@ -195,6 +194,7 @@ func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) e
 	}
 
 	// Get ID from the URL provided in the request
+	// TODO: maybe use utils.GetIDFromRequest(r) or take id as a parameter
 	documentID := r.PathValue("id")
 
 	// Adds id and lastChange field
