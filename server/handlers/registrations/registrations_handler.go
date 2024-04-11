@@ -1,7 +1,9 @@
 package registrations
 
 import (
+	"assignment-2/db"
 	"assignment-2/server/shared"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -52,7 +54,33 @@ func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Return the registrations
 	// If there is an error, return an error message
 
-	http.Error(w, "GET request not implemented", http.StatusNotImplemented)
+	// Get the all dashboard config documents
+	allDocuments, err2 := db.GetAllDocuments(w, r, db.DashboardCollection)
+	if err2 != nil {
+		http.Error(w, "Error while trying to receive document from db.", http.StatusInternalServerError)
+		log.Println("Error while trying to receive document from db: ", err2.Error())
+		return
+	}
+
+	// Marshal the status object to JSON
+	marshaled, err3 := json.MarshalIndent(
+		allDocuments,
+		"",
+		"\t",
+	)
+	if err3 != nil {
+		log.Println("Error during JSON encoding: " + err3.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
+
+	// Write the JSON to the response
+	_, err4 := w.Write(marshaled)
+	if err4 != nil {
+		log.Println("Failed to write response: " + err4.Error())
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
 }
 
 // Advanced Task: Implement the HEAD method functionality (only return the header, not the body).
@@ -74,20 +102,43 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	// Return the ID of the saved DashboardConfig
 	// If there is an error, return an error message
 
-	// Read and parse the body
-	validRequest, err := checkValidityOfResponseBody(w, r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	/*
+		// Read and parse the body
+		validRequest, err := checkValidityOfResponseBody(w, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-	log.Println(validRequest)
+	*/
+
+	// log.Println(validRequest)
 
 	// Save the DashboardConfig to the database
-	// TODO: Implement saving the DashboardConfig to the database
+	id, configMap, err2 := db.AddDashboardConfigDocument(w, r, db.DashboardCollection)
+	if err2 != nil {
+		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+	}
 
 	// Return the ID of the saved DashboardConfig
 	// TODO: Implement returning the ID of the saved DashboardConfig
+	// Marshal the status object to JSON
+	marshaled, err3 := json.MarshalIndent(
+		shared.RegistrationResponse{ID: id, LastChange: configMap.LastChange},
+		"",
+		"\t",
+	)
+	if err3 != nil {
+		log.Println("Error during JSON encoding: " + err3.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
 
-	http.Error(w, "PUT request not implemented", http.StatusNotImplemented)
+	// Write the JSON to the response
+	_, err4 := w.Write(marshaled)
+	if err4 != nil {
+		log.Println("Failed to write response: " + err4.Error())
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
 }

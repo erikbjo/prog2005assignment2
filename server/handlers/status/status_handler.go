@@ -31,6 +31,7 @@ func GetEndpointStructs() []shared.Endpoint {
 // Status handler for the server. Returns the status of the server and the APIs it relies on.
 // Currently only supports GET requests.
 func Handler(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received request: " + r.Method + " " + r.URL.Path)
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
