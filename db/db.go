@@ -223,7 +223,7 @@ func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) e
 		// Delete specified document
 		_, err2 := client.Collection(collection).Doc(documentId).Delete(ctx)
 		if err2 != nil {
-			log.Println("Error extracting body of returned document" + documentId)
+			log.Println("Error while deleting document:" + documentId)
 			return err2
 		}
 	} else if !ok && err == nil {
