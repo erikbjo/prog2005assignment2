@@ -104,14 +104,14 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collecti
 }
 
 /*
-GetDocument Returns the document that matches with the provided ID from a collection
+GetDashboardConfigDocument Returns the document that matches with the provided ID from a collection
 */
-func GetDocument(
+func GetDashboardConfigDocument(
 	id string,
 	collection string,
-) (interface{}, error) {
+) (*shared.DashboardConfig, error) {
 	// interface of document content
-	var data interface{}
+	var data *shared.DashboardConfig
 
 	if len(id) != 0 {
 		// Extract individual document
@@ -126,13 +126,11 @@ func GetDocument(
 			return nil, err2
 		}
 
-		var mapOfContent map[string]interface{}
-		if err4 := doc.DataTo(&mapOfContent); err4 != nil {
+		if err4 := doc.DataTo(&data); err4 != nil {
 			log.Println("Error unmarshalling document mapOfContent:", err4)
 			return nil, err4
 		}
 		// A document map with string keys
-		data = mapOfContent
 		fmt.Printf("content is: %v", data)
 	} else {
 		log.Println("No valid ID was provided")
@@ -197,39 +195,26 @@ func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) e
 	// TODO: maybe use utils.GetIDFromRequest(r) or take id as a parameter
 	documentID := r.PathValue("id")
 
-	// Adds id and lastChange field
-	updates["id"] = documentID
-	updates["lastChange"] = time.Now()
+	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
 
-	// TODO: maybe go back to update function, use a loop to update each key and value
-	// Add element in embedded structure.
-	// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
-	// and illustrates how you can use Firestore features such as Firestore timestamps.
-	_, err2 := client.Collection(collection).Doc(documentID).Set(ctx, updates)
-	if err2 != nil {
-		// Error handling
-		log.Printf("Error when updating document. Error: %s", err2.Error())
-		return err2
-	}
-	return nil
-}
+		// Adds id and lastChange field
+		updates["id"] = documentID
+		updates["lastChange"] = time.Now()
 
-// DeleteDocument with the provided ID, if found.
-func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) error {
-	documentId := r.PathValue("id")
-
-	// Checks if a document with the provided ID exists in the collection
-	if ok, err := documentExists(ctx, collection, documentId); ok && err == nil {
-		// Delete specified document
-		_, err2 := client.Collection(collection).Doc(documentId).Delete(ctx)
+		// TODO: maybe go back to update function, use a loop to update each key and value
+		// Add element in embedded structure.
+		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
+		// and illustrates how you can use Firestore features such as Firestore timestamps.
+		_, err2 := client.Collection(collection).Doc(documentID).Set(ctx, updates)
 		if err2 != nil {
-			log.Println("Error extracting body of returned document" + documentId)
+			// Error handling
+			log.Printf("Error when updating document. Error: %s", err2.Error())
 			return err2
 		}
 	} else if !ok && err == nil {
 		log.Printf(
 			"A document with the provided ID: %s, was not found in the collection: %s.\n",
-			documentId, collection,
+			documentID, collection,
 		)
 	} else {
 		log.Println("Error while trying to find document: ", err.Error())
@@ -238,24 +223,44 @@ func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) e
 	return nil
 }
 
+// DeleteDocument with the provided ID, if found.
+func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) error {
+	documentID := r.PathValue("id")
+
+	// Checks if a document with the provided ID exists in the collection
+	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
+		// Delete specified document
+		_, err2 := client.Collection(collection).Doc(documentID).Delete(ctx)
+		if err2 != nil {
+			log.Println("Error while deleting document:" + documentID)
+			return err2
+		}
+	} else if !ok && err == nil {
+		log.Printf(
+			"A document with the provided ID: %s, was not found in the collection: %s.\n",
+			documentID, collection,
+		)
+	} else {
+		log.Println("Error while trying to find document: ", err.Error())
+		return err
+	}
+	log.Printf("The document: %s, was successfully deleted.", documentID)
+	return nil
+}
+
 // documentExists checks if a document exists in a Firestore collection.
 func documentExists(ctx context.Context, collection, documentID string) (bool, error) {
-	iter := client.Collection(collection).Where("id", "==", documentID).Documents(ctx)
-	defer iter.Stop()
+	// Reference the document using its document ID
+	docRef := client.Collection(collection).Doc(documentID)
 
-	// Iterate over the result to see if any document matches the ID.
-	for {
-		_, err := iter.Next()
-		if errors.Is(err, iterator.Done) {
-			// Document not found.
-			return false, nil
-		}
-		if err != nil {
-			return false, err
-		}
-		// Document found.
-		return true, nil
+	// Get a snapshot of the document
+	snapshot, err := docRef.Get(ctx)
+	if err != nil {
+		return false, err
 	}
+
+	// Returns true if the document exists and false if not
+	return snapshot.Exists(), nil
 }
 
 func Initialize() {

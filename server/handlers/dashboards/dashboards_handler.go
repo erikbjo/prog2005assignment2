@@ -53,7 +53,7 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.GetIDFromRequest(r)
 
-	mp, err := db.GetDocument(id, db.DashboardCollection)
+	mp, err := db.GetDashboardConfigDocument(id, db.DashboardCollection)
 	if err != nil {
 		log.Println("Error while trying to display dashboard document: ", err.Error())
 		http.Error(
@@ -66,16 +66,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// mp is map[string]interface {} type
 	// convert it to shared.DashboardConfig type
 
-	var dashboard shared.DashboardConfig
-	err = json.Unmarshal([]byte(mp.(string)), &dashboard)
-	if err != nil {
-		log.Println("Error while trying to unmarshal dashboard document: ", err.Error())
-		http.Error(
-			w,
-			"Error while trying to unmarshal dashboard document.",
-			http.StatusInternalServerError,
-		)
-	}
+	dashboard := mp
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(dashboard)
