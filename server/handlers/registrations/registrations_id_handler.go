@@ -59,7 +59,7 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 
 	// Get the registration with the provided ID
 	// TODO: Implement getting the registration with the provided ID
-	dashboard, err2 := db.GetDocument(id, db.DashboardCollection)
+	dashboard, err2 := db.GetDashboardConfigDocument(id, db.DashboardCollection)
 	if err2 != nil {
 		http.Error(
 			w,

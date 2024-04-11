@@ -104,14 +104,14 @@ func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collecti
 }
 
 /*
-GetDocument Returns the document that matches with the provided ID from a collection
+GetDashboardConfigDocument Returns the document that matches with the provided ID from a collection
 */
-func GetDocument(
+func GetDashboardConfigDocument(
 	id string,
 	collection string,
-) (interface{}, error) {
+) (*shared.DashboardConfig, error) {
 	// interface of document content
-	var data interface{}
+	var data *shared.DashboardConfig
 
 	if len(id) != 0 {
 		// Extract individual document
@@ -126,13 +126,11 @@ func GetDocument(
 			return nil, err2
 		}
 
-		var mapOfContent map[string]interface{}
-		if err4 := doc.DataTo(&mapOfContent); err4 != nil {
+		if err4 := doc.DataTo(&data); err4 != nil {
 			log.Println("Error unmarshalling document mapOfContent:", err4)
 			return nil, err4
 		}
 		// A document map with string keys
-		data = mapOfContent
 		fmt.Printf("content is: %v", data)
 	} else {
 		log.Println("No valid ID was provided")
