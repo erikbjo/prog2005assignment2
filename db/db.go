@@ -197,19 +197,30 @@ func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) e
 	// Get ID from the URL provided in the request
 	documentID := r.PathValue("id")
 
-	// Adds id and lastChange field
-	updates["id"] = documentID
-	updates["lastChange"] = time.Now()
+	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
 
-	// TODO: maybe go back to update function, use a loop to update each key and value
-	// Add element in embedded structure.
-	// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
-	// and illustrates how you can use Firestore features such as Firestore timestamps.
-	_, err2 := client.Collection(collection).Doc(documentID).Set(ctx, updates)
-	if err2 != nil {
-		// Error handling
-		log.Printf("Error when updating document. Error: %s", err2.Error())
-		return err2
+		// Adds id and lastChange field
+		updates["id"] = documentID
+		updates["lastChange"] = time.Now()
+
+		// TODO: maybe go back to update function, use a loop to update each key and value
+		// Add element in embedded structure.
+		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
+		// and illustrates how you can use Firestore features such as Firestore timestamps.
+		_, err2 := client.Collection(collection).Doc(documentID).Set(ctx, updates)
+		if err2 != nil {
+			// Error handling
+			log.Printf("Error when updating document. Error: %s", err2.Error())
+			return err2
+		}
+	} else if !ok && err == nil {
+		log.Printf(
+			"A document with the provided ID: %s, was not found in the collection: %s.\n",
+			documentID, collection,
+		)
+	} else {
+		log.Println("Error while trying to find document: ", err.Error())
+		return err
 	}
 	return nil
 }
