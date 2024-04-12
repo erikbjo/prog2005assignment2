@@ -209,15 +209,13 @@ func UpdateDashboardConfigDocument(w http.ResponseWriter, r *http.Request, colle
 /*
 DeleteDocument Deletes a document with the provided ID, if found.
 */
-func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) error {
-	documentID := r.PathValue("id")
-
+func DeleteDocument(id string, collection string) error {
 	// Checks if a document with the provided ID exists in the collection
-	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
+	if ok, err := documentExists(ctx, collection, id); ok && err == nil {
 		// Find document with matching ID
-		foundDocument, err3 := getDocumentByID(documentID, collection)
+		foundDocument, err3 := getDocumentByID(id, collection)
 		if err3 != nil {
-			log.Println("Error trying to find document with ID: " + documentID)
+			log.Println("Error trying to find document with ID: " + id)
 			return err3
 		}
 
@@ -227,19 +225,19 @@ func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) e
 		// Delete specified document
 		_, err2 := client.Collection(collection).Doc(firebaseID).Delete(ctx)
 		if err2 != nil {
-			log.Println("Error while deleting document:" + documentID)
+			log.Println("Error while deleting document:" + id)
 			return err2
 		}
 	} else if !ok && err == nil {
 		log.Printf(
 			"A document with the provided ID: %s, was not found in the collection: %s.\n",
-			documentID, collection,
+			id, collection,
 		)
 	} else {
 		log.Println("Error while trying to find document: ", err.Error())
 		return err
 	}
-	log.Printf("The document: %s, was successfully deleted.", documentID)
+	log.Printf("The document: %s, was successfully deleted.", id)
 	return nil
 }
 
