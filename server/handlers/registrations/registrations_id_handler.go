@@ -109,7 +109,7 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 
 	log.Println("Received request to update registration with ID ", id)
 
-	err2 := db.UpdateDocument(w, r, db.DashboardCollection)
+	err2 := db.UpdateDashboardConfigDocument(w, r, db.DashboardCollection)
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 	}
