@@ -86,9 +86,9 @@ GetDocument Returns the document that matches with the provided ID from a collec
 func GetDocument(
 	id string,
 	collection string,
-) (*shared.DashboardConfig, error) {
+) (interface{}, error) {
 	// interface of document content
-	var data *shared.DashboardConfig
+	var data interface{}
 
 	if len(id) != 0 {
 
@@ -104,7 +104,6 @@ func GetDocument(
 			return nil, err4
 		}
 		// A document map with string keys
-		fmt.Printf("content is: %v", data)
 	} else {
 		log.Println("No valid ID was provided")
 		return nil, fmt.Errorf("no valid ID was provided")
