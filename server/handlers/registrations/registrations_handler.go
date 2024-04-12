@@ -3,10 +3,12 @@ package registrations
 import (
 	"assignment-2/db"
 	"assignment-2/server/shared"
+	"assignment-2/server/utils"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 // Implemented methods for the endpoint without ID
@@ -55,7 +57,7 @@ func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// If there is an error, return an error message
 
 	// Get the all dashboard config documents
-	allDocuments, err2 := db.GetAllDocuments(w, r, db.DashboardCollection)
+	allDocuments, err2 := db.GetAllDocuments(db.DashboardCollection)
 	if err2 != nil {
 		http.Error(w, "Error while trying to receive document from db.", http.StatusInternalServerError)
 		log.Println("Error while trying to receive document from db: ", err2.Error())
@@ -114,8 +116,18 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 
 	// log.Println(validRequest)
 
+	var content shared.DashboardConfig
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&content); err != nil {
+		log.Println("Error while decoding json: ", err.Error())
+	}
+
+	content.LastChange = time.Now()
+	content.ID = utils.GenerateRandomID()
+
 	// Save the DashboardConfig to the database
-	id, configMap, err2 := db.AddDashboardConfigDocument(w, r, db.DashboardCollection)
+	err2 := db.AddDocument[shared.DashboardConfig](content, db.DashboardCollection)
 	if err2 != nil {
 		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
 	}
@@ -124,7 +136,7 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement returning the ID of the saved DashboardConfig
 	// Marshal the status object to JSON
 	marshaled, err3 := json.MarshalIndent(
-		shared.RegistrationResponse{ID: id, LastChange: configMap.LastChange},
+		shared.RegistrationResponse{ID: content.ID, LastChange: content.LastChange},
 		"",
 		"\t",
 	)

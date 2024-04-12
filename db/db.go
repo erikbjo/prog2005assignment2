@@ -114,19 +114,18 @@ func GetDocument(
 /*
 GetAllDocuments Returns all documents in collection.
 */
-func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) (
+func GetAllDocuments(collection string) (
 	[]interface{},
 	error,
 ) {
 	// interface of document content
-	var data interface{}
 	var allData []interface{}
 
 	// Collective retrieval of documents
 	iter := client.Collection(collection).Documents(
 		ctx,
-	) // Loop through all entries in provided collection
-
+	)
+	// Loop through all entries in provided collection
 	for {
 		doc, err := iter.Next()
 		if errors.Is(err, iterator.Done) {
@@ -143,9 +142,8 @@ func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) 
 			return nil, err3
 		}
 
-		// A document map with string keys. Each key is one field, like "content" or "timestamp"
-		data = mapOfContent
-		allData = append(allData, data)
+		// Append the document to the slice
+		allData = append(allData, mapOfContent)
 	}
 	return allData, nil
 }
