@@ -56,26 +56,28 @@ func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int {
 }
 
 /*
-AddDocument Reads a string from the body in plain-text and sends it to Firestore to be registered as a
+AddDocument Structures data by the provided struct and sends it to Firestore to be registered as a
 document.
 */
 func AddDocument[T any](
 	data interface{}, collection string,
-) (interface{}, error) {
+) error {
 
-	// 2. Assert type to target struct
+	// Assert type to target struct
 	target, ok := data.(T)
 	if !ok {
-		return nil, errors.New("data does not match target struct")
+		return fmt.Errorf("data does not match target struct")
 	}
 
-	// 3. Add document to Firestore
+	// Add document to Firestore
 	_, _, err := client.Collection(collection).Add(ctx, target)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return target, nil
+	log.Println("Document was successfully added to DB")
+
+	return nil
 }
 
 /*
