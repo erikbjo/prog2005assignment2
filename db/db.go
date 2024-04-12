@@ -2,7 +2,6 @@ package db
 
 import (
 	"assignment-2/server/shared"
-	"assignment-2/server/utils"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
 	"encoding/json"
@@ -57,56 +56,32 @@ func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int {
 }
 
 /*
-AddDashboardConfigDocument Reads a string from the body in plain-text and sends it to Firestore to be registered as a
+AddDocument Reads a string from the body in plain-text and sends it to Firestore to be registered as a
 document.
 */
-func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collection string) (
-	string,
-	*shared.DashboardConfig, error,
-) {
-	var content *shared.DashboardConfig
+func AddDocument[T any](
+	data interface{}, collection string,
+) (interface{}, error) {
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&content); err != nil {
-		log.Println("Error while decoding json: ", err.Error())
-		return "", nil, err
+	// 2. Assert type to target struct
+	target, ok := data.(T)
+	if !ok {
+		return nil, errors.New("data does not match target struct")
 	}
 
-	log.Println("Received request to add document for content: ", content)
-	if content == nil {
-		log.Println("content appears to be empty")
-		return "", nil, fmt.Errorf("content appears to be empty")
-	} else {
-		randomDocumentID := utils.GenerateRandomID()
-
-		// Sets the ID field to the new document ID
-		content.ID = randomDocumentID
-
-		// Sets the lastChange field to the current time stamp
-		content.LastChange = time.Now()
-
-		// Add element in embedded structure.
-		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
-		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		_, _, err2 := client.Collection(collection).Add(
-			ctx,
-			content,
-		)
-		if err2 != nil {
-			// Error handling
-			log.Println("Error when adding document " + fmt.Sprint(content) + ", Error: " + err2.Error())
-			return "", nil, err2
-		} else {
-			// Returns document ID, and map of content
-			return randomDocumentID, content, nil
-		}
+	// 3. Add document to Firestore
+	_, _, err := client.Collection(collection).Add(ctx, target)
+	if err != nil {
+		return nil, err
 	}
+
+	return target, nil
 }
 
 /*
-GetDashboardConfigDocument Returns the document that matches with the provided ID from a collection
+GetDocument Returns the document that matches with the provided ID from a collection
 */
-func GetDashboardConfigDocument(
+func GetDocument(
 	id string,
 	collection string,
 ) (*shared.DashboardConfig, error) {
