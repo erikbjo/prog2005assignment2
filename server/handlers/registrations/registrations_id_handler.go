@@ -59,9 +59,13 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 
 	// Get the registration with the provided ID
 	// TODO: Implement getting the registration with the provided ID
-	dashboard, err2 := db.GetDocument(w, r, db.DashboardCollection)
+	dashboard, err2 := db.GetDashboardConfigDocument(id, db.DashboardCollection)
 	if err2 != nil {
-		http.Error(w, "Error while trying to receive document from db.", http.StatusInternalServerError)
+		http.Error(
+			w,
+			"Error while trying to receive document from db.",
+			http.StatusInternalServerError,
+		)
 		log.Println("Error while trying to receive document from db: ", err2.Error())
 		return
 	}
@@ -93,6 +97,7 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	// TODO: This still leads to EOF later in function
 	/*
 		body, err := checkValidityOfResponseBody(w, r)
@@ -119,5 +124,9 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 
 	log.Println("Received request to delete registration with ID ", id)
 
-	http.Error(w, "DELETE request not implemented", http.StatusNotImplemented)
+	err2 := db.DeleteDocument(w, r, db.DashboardCollection)
+	if err2 != nil {
+		http.Error(w, "Error while trying to delete document.", http.StatusInternalServerError)
+		return
+	}
 }
