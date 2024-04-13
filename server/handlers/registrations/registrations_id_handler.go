@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
 // Implemented methods for the endpoint with ID
@@ -58,8 +59,7 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 	log.Printf("Received request to get registration with ID %s\n", id)
 
 	// Get the registration with the provided ID
-	// TODO: Implement getting the registration with the provided ID
-	dashboard, err2 := db.GetDashboardConfigDocument(id, db.DashboardCollection)
+	dashboard, err2 := db.GetDocument(id, db.DashboardCollection)
 	if err2 != nil {
 		http.Error(
 			w,
@@ -92,27 +92,29 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 }
 
 func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request) {
+	var update shared.DashboardConfig
+
 	id, err := utils.GetIDFromRequest(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// TODO: This still leads to EOF later in function
-	/*
-		body, err := checkValidityOfResponseBody(w, r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	*/
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&update); err != nil {
+		log.Println("Error while decoding json: ", err.Error())
+	}
+
+	update.ID = id
+	update.LastChange = time.Now()
 
 	log.Println("Received request to update registration with ID ", id)
 
-	err2 := db.UpdateDocument(w, r, db.DashboardCollection)
-	if err2 != nil {
-		http.Error(w, err2.Error(), http.StatusInternalServerError)
+	err3 := db.UpdateDocument[shared.DashboardConfig](update, id, db.DashboardCollection)
+	if err3 != nil {
+		http.Error(w, err3.Error(), http.StatusInternalServerError)
 	}
+	log.Println("Successfully updated registration with ID:", id)
 }
 
 func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) {
@@ -124,9 +126,9 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 
 	log.Println("Received request to delete registration with ID ", id)
 
-	err2 := db.DeleteDocument(w, r, db.DashboardCollection)
+	err2 := db.DeleteDocument(id, db.DashboardCollection)
 	if err2 != nil {
-		http.Error(w, "Error while trying to delete document.", http.StatusInternalServerError)
+		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return
 	}
 }

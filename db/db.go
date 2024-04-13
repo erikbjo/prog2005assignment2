@@ -1,11 +1,8 @@
 package db
 
 import (
-	"assignment-2/server/shared"
-	"assignment-2/server/utils"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
-	"encoding/json"
 	"errors"
 	firebase "firebase.google.com/go" // Generic firebase support
 	"fmt"
@@ -13,7 +10,6 @@ import (
 	"google.golang.org/api/option"
 	"log"
 	"net/http"
-	"time"
 )
 
 /*
@@ -25,7 +21,7 @@ storing and retrieval of content.
 var ctx context.Context
 var client *firestore.Client
 
-// Collection name in Firestore
+// Collection names in Firestore
 const (
 	firebaseAuth           = "./serviceAccountKey.json"
 	DashboardCollection    = "dashboards"
@@ -57,70 +53,44 @@ func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int {
 }
 
 /*
-AddDashboardConfigDocument Reads a string from the body in plain-text and sends it to Firestore to be registered as a
+AddDocument Structures data by the provided struct and sends it to Firestore to be registered as a
 document.
 */
-func AddDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collection string) (
-	string,
-	*shared.DashboardConfig, error,
-) {
-	var content *shared.DashboardConfig
+func AddDocument[T any](
+	data interface{}, collection string,
+) error {
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&content); err != nil {
-		log.Println("Error while decoding json: ", err.Error())
-		return "", nil, err
+	// Assert type to target struct
+	target, ok := data.(T)
+	if !ok {
+		return fmt.Errorf("data does not match target struct")
 	}
 
-	log.Println("Received request to add document for content: ", content)
-	if content == nil {
-		log.Println("content appears to be empty")
-		return "", nil, fmt.Errorf("content appears to be empty")
-	} else {
-		randomDocumentID := utils.GenerateRandomID()
-
-		// Sets the ID field to the new document ID
-		content.ID = randomDocumentID
-
-		// Sets the lastChange field to the current time stamp
-		content.LastChange = time.Now()
-
-		// Add element in embedded structure.
-		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
-		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		_, err2 := client.Collection(collection).Doc(randomDocumentID).Set(
-			ctx,
-			content,
-		)
-		if err2 != nil {
-			// Error handling
-			log.Println("Error when adding document " + fmt.Sprint(content) + ", Error: " + err2.Error())
-			return "", nil, err2
-		} else {
-			// Returns document ID, and map of content
-			return randomDocumentID, content, nil
-		}
+	// Add document to Firestore
+	_, _, err := client.Collection(collection).Add(ctx, target)
+	if err != nil {
+		return err
 	}
+
+	log.Println("Document was successfully added to DB")
+
+	return nil
 }
 
 /*
-GetDashboardConfigDocument Returns the document that matches with the provided ID from a collection
+GetDocument Returns the document that matches with the provided ID from a collection
 */
-func GetDashboardConfigDocument(
+func GetDocument(
 	id string,
 	collection string,
-) (*shared.DashboardConfig, error) {
+) (interface{}, error) {
 	// interface of document content
-	var data *shared.DashboardConfig
+	var data interface{}
 
 	if len(id) != 0 {
+
 		// Extract individual document
-
-		// Retrieve specific document based on id
-		res := client.Collection(collection).Doc(id)
-
-		// Retrieve reference to document
-		doc, err2 := res.Get(ctx)
+		doc, err2 := getDocumentByID(id, collection)
 		if err2 != nil {
 			log.Println("Error extracting body of returned document" + id)
 			return nil, err2
@@ -131,7 +101,6 @@ func GetDashboardConfigDocument(
 			return nil, err4
 		}
 		// A document map with string keys
-		fmt.Printf("content is: %v", data)
 	} else {
 		log.Println("No valid ID was provided")
 		return nil, fmt.Errorf("no valid ID was provided")
@@ -142,19 +111,18 @@ func GetDashboardConfigDocument(
 /*
 GetAllDocuments Returns all documents in collection.
 */
-func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) (
+func GetAllDocuments(collection string) (
 	[]interface{},
 	error,
 ) {
 	// interface of document content
-	var data interface{}
 	var allData []interface{}
 
 	// Collective retrieval of documents
 	iter := client.Collection(collection).Documents(
 		ctx,
-	) // Loop through all entries in provided collection
-
+	)
+	// Loop through all entries in provided collection
 	for {
 		doc, err := iter.Next()
 		if errors.Is(err, iterator.Done) {
@@ -171,41 +139,35 @@ func GetAllDocuments(w http.ResponseWriter, r *http.Request, collection string) 
 			return nil, err3
 		}
 
-		// A document map with string keys. Each key is one field, like "content" or "timestamp"
-		data = mapOfContent
-		allData = append(allData, data)
+		// Append the document to the slice
+		allData = append(allData, mapOfContent)
 	}
 	return allData, nil
 }
 
-func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) error {
-	// TODO: Update lastChange field to new current time
-	var updates map[string]interface{}
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&updates); err != nil {
-		log.Println("Error while decoding json: ", err.Error())
-		return err
-	}
-	if updates == nil {
-		return fmt.Errorf("content appears to be empty")
-	}
-
-	// Get ID from the URL provided in the request
-	// TODO: maybe use utils.GetIDFromRequest(r) or take id as a parameter
-	documentID := r.PathValue("id")
-
+/*
+UpdateDocument Updates a document with the provided ID, if found.
+*/
+func UpdateDocument[T any](updatedDocument interface{}, documentID string, collection string) error {
 	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
 
-		// Adds id and lastChange field
-		updates["id"] = documentID
-		updates["lastChange"] = time.Now()
+		// Find document with matching ID
+		foundDocument, err3 := getDocumentByID(documentID, collection)
+		if err3 != nil {
+			log.Println("Error trying to find document with ID: " + documentID)
+			return err3
+		}
 
-		// TODO: maybe go back to update function, use a loop to update each key and value
+		// Get the firebase ID of the document
+		firebaseID := foundDocument.Ref.ID
+
+		data, ok := updatedDocument.(T)
+		if !ok {
+			return fmt.Errorf("data does not match target struct")
+		}
+
 		// Add element in embedded structure.
-		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
-		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		_, err2 := client.Collection(collection).Doc(documentID).Set(ctx, updates)
+		_, err2 := client.Collection(collection).Doc(firebaseID).Set(ctx, data)
 		if err2 != nil {
 			// Error handling
 			log.Printf("Error when updating document. Error: %s", err2.Error())
@@ -223,46 +185,82 @@ func UpdateDocument(w http.ResponseWriter, r *http.Request, collection string) e
 	return nil
 }
 
-// DeleteDocument with the provided ID, if found.
-func DeleteDocument(w http.ResponseWriter, r *http.Request, collection string) error {
-	documentID := r.PathValue("id")
-
+/*
+DeleteDocument Deletes a document with the provided ID, if found.
+*/
+func DeleteDocument(id string, collection string) error {
 	// Checks if a document with the provided ID exists in the collection
-	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
+	if ok, err := documentExists(ctx, collection, id); ok && err == nil {
+		// Find document with matching ID
+		foundDocument, err3 := getDocumentByID(id, collection)
+		if err3 != nil {
+			log.Println("Error trying to find document with ID: " + id)
+			return err3
+		}
+
+		// Get the firebase ID of the document
+		firebaseID := foundDocument.Ref.ID
+
 		// Delete specified document
-		_, err2 := client.Collection(collection).Doc(documentID).Delete(ctx)
+		_, err2 := client.Collection(collection).Doc(firebaseID).Delete(ctx)
 		if err2 != nil {
-			log.Println("Error while deleting document:" + documentID)
+			log.Println("Error while deleting document:" + id)
 			return err2
 		}
 	} else if !ok && err == nil {
 		log.Printf(
 			"A document with the provided ID: %s, was not found in the collection: %s.\n",
-			documentID, collection,
+			id, collection,
 		)
 	} else {
 		log.Println("Error while trying to find document: ", err.Error())
 		return err
 	}
-	log.Printf("The document: %s, was successfully deleted.", documentID)
+	log.Printf("The document: %s, was successfully deleted.", id)
 	return nil
 }
 
-// documentExists checks if a document exists in a Firestore collection.
+/*
+documentExists Checks if a document with the provided ID exists in the collection.
+*/
 func documentExists(ctx context.Context, collection, documentID string) (bool, error) {
-	// Reference the document using its document ID
-	docRef := client.Collection(collection).Doc(documentID)
+	// Query documents based on the "id" field
+	iter := client.Collection(collection).Where("ID", "==", documentID).Documents(ctx)
 
-	// Get a snapshot of the document
-	snapshot, err := docRef.Get(ctx)
+	// Get the first document from the query iterator
+	_, err := iter.Next()
 	if err != nil {
+		if errors.Is(err, iterator.Done) {
+			return false, fmt.Errorf("document with ID %s not found in collection %s", documentID, collection)
+		}
 		return false, err
 	}
 
-	// Returns true if the document exists and false if not
-	return snapshot.Exists(), nil
+	return true, nil
 }
 
+/*
+getDocumentByID Retrieves a document with the provided ID from the collection.
+*/
+func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot, error) {
+	// Query documents based on the "id" field
+	iter := client.Collection(collection).Where("ID", "==", id).Documents(ctx)
+
+	// Get the first document from the query iterator
+	docSnap, err := iter.Next()
+	if err != nil {
+		if errors.Is(err, iterator.Done) {
+			return nil, fmt.Errorf("document with ID %s not found in collection %s", id, collection)
+		}
+		return nil, err
+	}
+
+	return docSnap, nil
+}
+
+/*
+Initialize Initializes the Firestore client.
+*/
 func Initialize() {
 	// Firebase initialization
 	ctx = context.Background()
@@ -290,7 +288,9 @@ func Initialize() {
 	}
 }
 
-// Close down client
+/*
+Close Closes the Firestore client.
+*/
 func Close() {
 	errClose := client.Close()
 	if errClose != nil {
