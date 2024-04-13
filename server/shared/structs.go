@@ -21,37 +21,96 @@ type RegistrationResponse struct {
 }
 
 type DashboardConfig struct {
-	ID       string `json:"id"`
-	Country  string `json:"country"`
-	IsoCode  string `json:"isoCode"`
-	Features struct {
-		Temperature      bool     `json:"temperature"`
-		Precipitation    bool     `json:"precipitation"`
-		Capital          bool     `json:"capital"`
-		Coordinates      bool     `json:"coordinates"`
-		Population       bool     `json:"population"`
-		Area             bool     `json:"area"`
-		TargetCurrencies []string `json:"targetCurrencies"`
-	} `json:"features"`
-	LastChange time.Time `json:"lastChange"`
+	ID         string         `json:"id"`
+	Country    string         `json:"country"`
+	IsoCode    string         `json:"isoCode"`
+	Features   ConfigFeatures `json:"features"`
+	LastChange time.Time      `json:"lastChange"`
+}
+
+type ConfigFeatures struct {
+	Temperature      bool     `json:"temperature"`
+	Precipitation    bool     `json:"precipitation"`
+	Capital          bool     `json:"capital"`
+	Coordinates      bool     `json:"coordinates"`
+	Population       bool     `json:"population"`
+	Area             bool     `json:"area"`
+	TargetCurrencies []string `json:"targetCurrencies"`
 }
 
 type Dashboard struct {
-	Country  string `json:"country"`
-	IsoCode  string `json:"isoCode"`
-	Features struct {
-		Temperature   float64 `json:"temperature"`
+	Country       string            `json:"country"`
+	IsoCode       string            `json:"isoCode"`
+	Features      DashboardFeatures `json:"features"`
+	LastRetrieval string            `json:"lastRetrieval"`
+}
+
+type DashboardFeatures struct {
+	Temperature      float64               `json:"temperature"`
+	Precipitation    float64               `json:"precipitation"`
+	Capital          []string              `json:"capital"`
+	Coordinates      Coordinates           `json:"coordinates"`
+	Population       int                   `json:"population"`
+	Area             float64               `json:"area"`
+	TargetCurrencies map[string]float64    `json:"targetCurrencies"`
+	Currencies       map[string]Currencies `json:"currencies"`
+}
+
+type Currencies struct {
+	Name   string `json:"name"`
+	Symbol string `json:"symbol"`
+}
+
+type Coordinates struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
+type ResponseFromRestcountries struct {
+	Name struct {
+		Common   string `json:"common"`
+		Official string `json:"official"`
+	} `json:"name"`
+	Cca2       string                `json:"cca2"`
+	Currencies map[string]Currencies `json:"currencies"`
+	Capital    []string              `json:"capital"`
+	Latlng     []float64             `json:"latlng"`
+	Area       float64               `json:"area"`
+	Population int                   `json:"population"`
+}
+
+type ResponseFromMeteo struct {
+	CurrentUnits struct {
+		Time          string `json:"time"`
+		Interval      string `json:"interval"`
+		Temperature2M string `json:"temperature_2m"`
+		Precipitation string `json:"precipitation"`
+	} `json:"current_units"`
+	Current struct {
+		Time          string  `json:"time"`
+		Interval      int     `json:"interval"`
+		Temperature2M float64 `json:"temperature_2m"`
 		Precipitation float64 `json:"precipitation"`
-		Capital       string  `json:"capital"`
-		Coordinates   struct {
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-		} `json:"coordinates"`
-		Population       int                `json:"population"`
-		Area             float64            `json:"area"`
-		TargetCurrencies map[string]float64 `json:"targetCurrencies"`
-	} `json:"features"`
-	LastRetrieval string `json:"lastRetrieval"`
+	} `json:"current"`
+}
+
+type RestCountry struct {
+	Name struct {
+		Common   string `json:"common"`
+		Official string `json:"official"`
+	} `json:"name"`
+	Cca2       string                `json:"cca2"`
+	Currencies map[string]Currencies `json:"currencies"`
+	Capital    []string              `json:"capital"`
+	Latlng     []int                 `json:"latlng"`
+	Area       int                   `json:"area"`
+	Population int                   `json:"population"`
+}
+
+type ResponseFromCurrency struct {
+	Result   string             `json:"result"`
+	BaseCode string             `json:"base_code"`
+	Rates    map[string]float64 `json:"rates"`
 }
 
 type MeteoForecastResponse struct {
