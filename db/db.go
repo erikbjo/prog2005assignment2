@@ -1,10 +1,8 @@
 package db
 
 import (
-	"assignment-2/server/shared"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
-	"encoding/json"
 	"errors"
 	firebase "firebase.google.com/go" // Generic firebase support
 	"fmt"
@@ -12,7 +10,6 @@ import (
 	"google.golang.org/api/option"
 	"log"
 	"net/http"
-	"time"
 )
 
 /*
@@ -149,30 +146,10 @@ func GetAllDocuments(collection string) (
 }
 
 /*
-UpdateDashboardConfigDocument Updates a document with the provided ID, if found.
+UpdateDocument Updates a document with the provided ID, if found.
 */
-func UpdateDashboardConfigDocument(w http.ResponseWriter, r *http.Request, collection string) error {
-	// TODO: make this use struct instead of map (because e.g. id key is saved as "id" in Firestore)
-	var updates *shared.DashboardConfig
-
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&updates); err != nil {
-		log.Println("Error while decoding json: ", err.Error())
-		return err
-	}
-	if updates == nil {
-		return fmt.Errorf("content appears to be empty")
-	}
-
-	// Get ID from the URL provided in the request
-	// TODO: maybe use utils.GetIDFromRequest(r) or take id as a parameter
-	documentID := r.PathValue("id")
-
+func UpdateDocument[T any](updatedDocument interface{}, documentID string, collection string) error {
 	if ok, err := documentExists(ctx, collection, documentID); ok && err == nil {
-
-		// Adds id and lastChange field
-		updates.ID = documentID
-		updates.LastChange = time.Now()
 
 		// Find document with matching ID
 		foundDocument, err3 := getDocumentByID(documentID, collection)
@@ -184,11 +161,13 @@ func UpdateDashboardConfigDocument(w http.ResponseWriter, r *http.Request, colle
 		// Get the firebase ID of the document
 		firebaseID := foundDocument.Ref.ID
 
-		// TODO: maybe go back to update function, use a loop to update each key and value
+		data, ok := updatedDocument.(T)
+		if !ok {
+			return fmt.Errorf("data does not match target struct")
+		}
+
 		// Add element in embedded structure.
-		// Note: this structure is defined by the client, not the server!; it exemplifies the use of a complex structure
-		// and illustrates how you can use Firestore features such as Firestore timestamps.
-		_, err2 := client.Collection(collection).Doc(firebaseID).Set(ctx, updates)
+		_, err2 := client.Collection(collection).Doc(firebaseID).Set(ctx, data)
 		if err2 != nil {
 			// Error handling
 			log.Printf("Error when updating document. Error: %s", err2.Error())
