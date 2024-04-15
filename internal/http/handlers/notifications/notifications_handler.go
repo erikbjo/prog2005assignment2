@@ -2,7 +2,7 @@ package notifications
 
 import (
 	"assignment-2/internal/constants"
-	`assignment-2/internal/http/datatransfers/inhouse`
+	"assignment-2/internal/http/datatransfers/inhouse"
 	"fmt"
 	"net/http"
 )
@@ -24,6 +24,7 @@ var notificationsEndpointWithoutID = inhouse.Endpoint{
 // It currently supports GET, POST and DELETE requests.
 // Endpoint for managing webhooks for event notifications.
 func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json")
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
