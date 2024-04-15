@@ -10,7 +10,8 @@ type MeteoForecastResponse struct {
 	TimezoneAbbreviation string  `json:"timezone_abbreviation"`
 	Hourly               struct {
 		Time          []interface{} `json:"time"`
-		Temperature2M []interface{} `json:"temperature_2m"`
+		Temperature2M []float64     `json:"temperature_2m"`
+		Precipitation []float64     `json:"precipitation"`
 	} `json:"hourly,omitempty"`
 	HourlyUnits struct {
 		Temperature2M string `json:"temperature_2m"`
