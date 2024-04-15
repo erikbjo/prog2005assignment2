@@ -94,5 +94,17 @@ func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 }
 
 func handleNotificationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "DELETE request not implemented", http.StatusNotImplemented)
+	id, err := utils.GetIDFromRequest(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	log.Println("Received request to delete notification with ID ", id)
+
+	err2 := firebase.DeleteDocument(id, firebase.NotificationCollection)
+	if err2 != nil {
+		http.Error(w, err2.Error(), http.StatusInternalServerError)
+		return
+	}
 }
