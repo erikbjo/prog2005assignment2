@@ -93,6 +93,12 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error while decoding json: ", err.Error())
 	}
 
+	// Checks if event in body is valid
+	if isValidEvent(content.Event) == false {
+		http.Error(w, "Invalid event type provided", http.StatusBadRequest)
+		return
+	}
+
 	content.Time = time.Now()
 	content.ID = utils.GenerateRandomID()
 
@@ -122,4 +128,16 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		return
 	}
+}
+
+/*
+isValidEvent checks if the event is a valid event type.
+*/
+func isValidEvent(event string) bool {
+	for _, validEvent := range requests.ImplementedEvents {
+		if event == validEvent {
+			return true
+		}
+	}
+	return false
 }

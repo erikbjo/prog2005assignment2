@@ -9,6 +9,9 @@ const (
 	EventInvoke   = "INVOKE"
 )
 
+// Slice of currently implemented event types for notifications
+var ImplementedEvents = []string{EventRegister, EventChange, EventDelete, EventInvoke}
+
 type Notification struct {
 	ID      string    `json:"id"`
 	Url     string    `json:"url"`
