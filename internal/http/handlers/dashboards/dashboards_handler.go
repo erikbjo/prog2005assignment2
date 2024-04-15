@@ -52,6 +52,7 @@ func GetEndpointStructs() []inhouse.Endpoint {
 // HandlerWithID handles the /dashboard/v1/dashboards path.
 // It currently only supports GET requests
 func HandlerWithID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json")
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:

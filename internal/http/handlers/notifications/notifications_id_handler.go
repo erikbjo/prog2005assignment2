@@ -2,7 +2,7 @@ package notifications
 
 import (
 	"assignment-2/internal/constants"
-	`assignment-2/internal/http/datatransfers/inhouse`
+	"assignment-2/internal/http/datatransfers/inhouse"
 	"fmt"
 	"net/http"
 )
@@ -22,10 +22,7 @@ var notificationsEndpointWithID = inhouse.Endpoint{
 
 // HandlerWithID handles the /notifications/{id} path.
 func HandlerWithID(w http.ResponseWriter, r *http.Request) {
-	implementedMethods := []string{
-		http.MethodGet,
-		http.MethodDelete,
-	}
+	w.Header().Set("content-type", "application/json")
 
 	// Switch on the HTTP request method
 	switch r.Method {
@@ -39,7 +36,7 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 		http.Error(
 			w, fmt.Sprintf(
 				"REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
-				implementedMethods,
+				implementedMethodsWithID,
 			), http.StatusNotImplemented,
 		)
 		return

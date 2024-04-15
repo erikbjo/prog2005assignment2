@@ -29,6 +29,7 @@ var registrationsEndpointWithoutID = inhouse.Endpoint{
 
 // HandlerWithoutID handles the /registrations/v1/registrations path.
 func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json")
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
