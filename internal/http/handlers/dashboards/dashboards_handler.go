@@ -12,13 +12,14 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 type dashboard struct {
 	Country       string            `json:"country"`
 	IsoCode       string            `json:"isoCode"`
 	Features      dashboardFeatures `json:"features"`
-	LastRetrieval string            `json:"lastRetrieval"`
+	LastRetrieval time.Time         `json:"lastRetrieval"`
 }
 
 type dashboardFeatures struct {
@@ -52,6 +53,7 @@ func GetEndpointStructs() []inhouse.Endpoint {
 // HandlerWithID handles the /dashboard/v1/dashboards path.
 // It currently only supports GET requests
 func HandlerWithID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("content-type", "application/json")
 	// Switch on the HTTP request method
 	switch r.Method {
 	case http.MethodGet:
@@ -83,9 +85,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error while trying to display dashboard document: ", err.Error())
 		http.Error(
 			w,
-			"Error while trying to display dashboard document.",
+			"Error while trying to display dashboard document",
 			http.StatusInternalServerError,
 		)
+		return
 	}
 
 	var response dashboard
@@ -149,6 +152,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	features.TargetCurrencies = currencyFeatures.TargetCurrencies
 
 	response.Features = features
+	response.LastRetrieval = time.Now()
 
 	log.Println("\n\tResponse: ", response)
 
@@ -178,7 +182,7 @@ func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
 	r, err1 := http.NewRequest(
 		http.MethodGet,
 		fmt.Sprintf(
-			"%s?latitude=%f&longitude=%f&current=temperature_2m,precipitation",
+			"%s?latitude=%f&longitude=%f&hourly=temperature_2m,precipitation&timezone=Europe%%2FBerlin&forecast_days=1",
 			utils2.CurrentMeteoApi, coordinates.Latitude, coordinates.Longitude,
 		),
 		nil,
@@ -211,9 +215,15 @@ func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
 	// 	Temperature:   meteo.Current.Temperature2M,
 	// 	Precipitation: meteo.Current.Precipitation,
 	// }
+	// Gets the average of all hourly temperatures and rounds to 5 decimal points
+	averageTemperature := float64(int(average(meteo.Hourly.Temperature2M)*100000)) / 100000
+	averagePrecipitation := float64(int(average(meteo.Hourly.Precipitation)*100000)) / 100000
+
+	fmt.Printf("request: %v\n", res)
+	fmt.Printf("length of temp array: %d\n", len(meteo.Hourly.Temperature2M))
 	features := dashboardFeatures{
-		Temperature:   http.StatusNotImplemented,
-		Precipitation: http.StatusNotImplemented,
+		Temperature:   averageTemperature,
+		Precipitation: averagePrecipitation,
 	}
 
 	return features, nil
@@ -361,4 +371,15 @@ func mergeFeatures(a, b dashboardFeatures) {
 			log.Println("Unsupported type when merging features: ", fieldA.Kind())
 		}
 	}
+}
+
+func average(elements []float64) float64 {
+	var sum float64
+	if len(elements) == 0 {
+		return 0
+	}
+	for _, element := range elements {
+		sum += element
+	}
+	return sum / float64(len(elements))
 }

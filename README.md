@@ -606,6 +606,23 @@ See the empty .env file for an example. Most of the variables are used for Fireb
 
 ## Deployment
 
+The service can be deployed using the following command:
+
+```bash
+docker compose up -d --build
+```
+
+### Logs
+
+```bash
+docker ps -a
+```
+
+
+```bash
+docker logs -f <container_name>
+```
+
 ## Testing
 
 Run the following command to run the tests:
