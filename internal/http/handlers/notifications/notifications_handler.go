@@ -2,9 +2,15 @@ package notifications
 
 import (
 	"assignment-2/internal/constants"
+	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/http/datatransfers/inhouse"
+	"assignment-2/internal/http/datatransfers/requests"
+	"assignment-2/internal/utils"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 )
 
 // Implemented methods for the endpoint
@@ -46,9 +52,92 @@ func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "GET request not implemented", http.StatusNotImplemented)
+	// Get the all notification documents
+	allDocuments, err2 := firebase.GetAllDocuments(firebase.NotificationCollection)
+	if err2 != nil {
+		http.Error(
+			w,
+			"Error while trying to receive document from db.",
+			http.StatusInternalServerError,
+		)
+		log.Println("Error while trying to receive document from db: ", err2.Error())
+		return
+	}
+
+	// Marshal the status object to JSON
+	marshaled, err3 := json.MarshalIndent(
+		allDocuments,
+		"",
+		"\t",
+	)
+	if err3 != nil {
+		log.Println("Error during JSON encoding: " + err3.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
+
+	// Write the JSON to the response
+	_, err4 := w.Write(marshaled)
+	if err4 != nil {
+		log.Println("Failed to write response: " + err4.Error())
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "POST request not implemented", http.StatusNotImplemented)
+	var content requests.Notification
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&content); err != nil {
+		log.Println("Error while decoding json: ", err.Error())
+	}
+
+	// Checks if event in body is valid
+	if isValidEvent(content.Event) == false {
+		http.Error(w, "Invalid event type provided", http.StatusBadRequest)
+		return
+	}
+
+	content.Time = time.Now()
+	content.ID = utils.GenerateRandomID()
+
+	// Save the Notification to the database
+	err2 := firebase.AddDocument[requests.Notification](content, firebase.NotificationCollection)
+	if err2 != nil {
+		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+	}
+
+	// Return the ID of the saved Notification
+	// Marshal the status object to JSON
+	marshaled, err3 := json.MarshalIndent(
+		notificationResponse{Id: content.ID},
+		"",
+		"\t",
+	)
+	if err3 != nil {
+		log.Println("Error during JSON encoding: " + err3.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
+
+	// Write the JSON to the response
+	_, err4 := w.Write(marshaled)
+	if err4 != nil {
+		log.Println("Failed to write response: " + err4.Error())
+		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		return
+	}
+}
+
+/*
+isValidEvent checks if the event is a valid event type.
+*/
+func isValidEvent(event string) bool {
+	for _, validEvent := range requests.ImplementedEvents {
+		if event == validEvent {
+			return true
+		}
+	}
+	return false
 }

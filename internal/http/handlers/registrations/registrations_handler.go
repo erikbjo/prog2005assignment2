@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -27,7 +28,7 @@ var registrationsEndpointWithoutID = inhouse.Endpoint{
 	Description: "This endpoint is used to manage registrations.",
 }
 
-// HandlerWithoutID handles the /registrations/v1/registrations path.
+// HandlerWithoutID handles the /dashboard/v1/registrations path.
 func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	// Switch on the HTTP request method
@@ -92,15 +93,48 @@ func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Advanced Task: Implement the HEAD method functionality (only return the header, not the body).
+// Returns only the headers for the request to retrieve all dashboards configs
 func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
-	// Pseudocode
-	// Get all registrations from the database
-	// Return the headers only
-	// If there is an error, return an error message
 
-	http.Error(w, "HEAD request not implemented", http.StatusNotImplemented)
+	// Get all dashboard config documents to get content length
+	allDocuments, err2 := firebase.GetAllDocuments(firebase.DashboardCollection)
+	if err2 != nil {
+		http.Error(
+			w,
+			"Error while trying to receive document from db.",
+			http.StatusInternalServerError,
+		)
+		log.Println("Error while trying to receive document from db: ", err2.Error())
+		return
+	}
 
+	// Marshal the status object to JSON
+	marshaled, err3 := json.MarshalIndent(
+		allDocuments,
+		"",
+		"\t",
+	)
+	if err3 != nil {
+		log.Println("Error during JSON encoding: " + err3.Error())
+		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		return
+	}
+
+	// Set response headers
+	headers := map[string]string{
+		"Date":           time.Now().Format(time.RFC1123),
+		"Content-Type":   r.Header.Get("Content-Type"),
+		"Connection":     r.Header.Get("Connection"),
+		"Content-Length": strconv.Itoa(len(marshaled)),
+	}
+
+	fmt.Println(headers)
+	// Set response headers
+	for key, value := range headers {
+		w.Header().Set(key, value)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
