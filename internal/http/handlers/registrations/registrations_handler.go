@@ -5,6 +5,7 @@ import (
 	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
+	"assignment-2/internal/http/handlers/notifications"
 	"assignment-2/internal/utils"
 	"encoding/json"
 	"fmt"
@@ -61,7 +62,7 @@ func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// If there is an error, return an error message
 
 	// Get the all dashboard config documents
-	allDocuments, err2 := firebase.GetAllDocuments(firebase.DashboardCollection)
+	allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
 	if err2 != nil {
 		http.Error(
 			w,
@@ -97,7 +98,7 @@ func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Get all dashboard config documents to get content length
-	allDocuments, err2 := firebase.GetAllDocuments(firebase.DashboardCollection)
+	allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
 	if err2 != nil {
 		http.Error(
 			w,
@@ -138,29 +139,12 @@ func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
-	// Pseudocode
-	// Parse the body
-	// Decode the body into a DashboardConfig struct
-	// Save the DashboardConfig to the database
-	// Return the ID of the saved DashboardConfig
-	// If there is an error, return an error message
-
-	/*
-		// Read and parse the body
-		validRequest, err := checkValidityOfResponseBody(w, r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-	*/
-
-	// log.Println(validRequest)
 
 	var content requests.DashboardConfig
 
 	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&content); err != nil {
+	err := decoder.Decode(&content)
+	if err != nil {
 		log.Println("Error while decoding json: ", err.Error())
 	}
 
@@ -173,24 +157,36 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
 	}
 
-	// Return the ID of the saved DashboardConfig
-	// TODO: Implement returning the ID of the saved DashboardConfig
-	// Marshal the status object to JSON
-	marshaled, err3 := json.MarshalIndent(
+	// Check if any notifications are registered for the event
+	foundNotifications, err3 := notifications.FindNotificationsByCountry(requests.EventRegister, content.IsoCode)
+	if err3 != nil {
+		log.Println("Error while trying to find notifications: ", err3.Error())
+		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		return
+	}
+
+	// If found, invoke the notifications
+	if len(foundNotifications) > 0 {
+		for _, n := range foundNotifications {
+			notifications.InvokeNotification(n)
+		}
+	}
+
+	marshaled, err4 := json.MarshalIndent(
 		registrationResponse{ID: content.ID, LastChange: content.LastChange},
 		"",
 		"\t",
 	)
-	if err3 != nil {
-		log.Println("Error during JSON encoding: " + err3.Error())
+	if err4 != nil {
+		log.Println("Error during JSON encoding: " + err4.Error())
 		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
 		return
 	}
 
 	// Write the JSON to the response
-	_, err4 := w.Write(marshaled)
-	if err4 != nil {
-		log.Println("Failed to write response: " + err4.Error())
+	_, err5 := w.Write(marshaled)
+	if err5 != nil {
+		log.Println("Failed to write response: " + err5.Error())
 		http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		return
 	}
