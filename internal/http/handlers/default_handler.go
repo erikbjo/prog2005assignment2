@@ -7,8 +7,10 @@ import (
 	"assignment-2/internal/http/handlers/registrations"
 	"assignment-2/internal/http/handlers/status"
 	"encoding/json"
+	"github.com/russross/blackfriday"
 	"log"
 	"net/http"
+	"os"
 )
 
 type siteMap struct {
@@ -20,7 +22,8 @@ type siteMap struct {
 // Site map for the server. Contains all the endpoints and their descriptions.
 var SiteMap = siteMap{
 	Help: "This is the default handler for the server. " +
-		"Maybe you typed the wrong path or are looking for the web page. Go to '/' for the web page.",
+		"Maybe you typed the wrong path or are looking for the web page. " +
+		"Go to '/' to read the README.md file.",
 	Endpoints: []inhouse.Endpoint{},
 }
 
@@ -43,8 +46,34 @@ func Init() {
 func DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	// If the request is for the root path, redirect to the web page
 	if r.URL.Path == "/" {
-		http.Redirect(w, r, "/web", http.StatusSeeOther)
-		return
+		// Read the contents of the README.md file
+		readme, err := os.ReadFile("README.md")
+		if err != nil {
+			http.Error(w, "Failed to read README.md", http.StatusInternalServerError)
+			return
+		}
+
+		html := blackfriday.MarkdownCommon(readme)
+
+		// Set the Content-Type header to indicate that this is HTML
+		w.Header().Set("Content-Type", "text/html")
+
+		// Custom styles for the HTML to make it look better
+		customStyles := `
+            <style>
+                pre {background-color: #f4f4f4;}
+				body {padding: 10px;}
+            </style>
+        `
+
+		// Append the custom styles to the HTML
+		htmlWithStyles := append([]byte(customStyles), html...)
+
+		// Write the HTML response
+		_, err = w.Write(htmlWithStyles)
+		if err != nil {
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	}
 
 	// Else, return the site map
