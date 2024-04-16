@@ -2,8 +2,8 @@
 package main
 
 import (
-	"assignment-2/cmd/api/server"
 	"assignment-2/internal/config"
+	`assignment-2/internal/http/server`
 	"log"
 )
 

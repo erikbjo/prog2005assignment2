@@ -1,0 +1,9 @@
+- Make dashboard take into count the bool values from config
+    - Make the struct omitempty, has to be a pointer
+
+- Make tests
+
+- Docker:
+    - Make it take the .env file
+    - Make it take the firebase credentials file
+
