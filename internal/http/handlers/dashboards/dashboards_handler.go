@@ -7,14 +7,15 @@ import (
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/http/datatransfers/responses"
 	utils2 "assignment-2/internal/utils"
+	"dario.cat/mergo"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"time"
 )
 
+// dashboard is the struct for the response object
 type dashboard struct {
 	Country       string            `json:"country"`
 	IsoCode       string            `json:"isoCode"`
@@ -22,15 +23,16 @@ type dashboard struct {
 	LastRetrieval time.Time         `json:"lastRetrieval"`
 }
 
+// dashboardFeatures is the struct for the features of the dashboard
 type dashboardFeatures struct {
-	Temperature      float64                         `json:"temperature"`
-	Precipitation    float64                         `json:"precipitation"`
-	Capital          []string                        `json:"capital"`
-	Coordinates      inhouse.Coordinates             `json:"coordinates"`
-	Population       int                             `json:"population"`
-	Area             float64                         `json:"area"`
-	TargetCurrencies map[string]float64              `json:"targetCurrencies"`
-	Currencies       map[string]responses.Currencies `json:"currencies"`
+	Temperature      *float64             `json:"temperature,omitempty"`
+	Precipitation    *float64             `json:"precipitation,omitempty"`
+	Capital          *string              `json:"capital,omitempty"`
+	Coordinates      *inhouse.Coordinates `json:"coordinates,omitempty"`
+	Population       *int                 `json:"population,omitempty"`
+	Area             *float64             `json:"area,omitempty"`
+	TargetCurrencies map[string]float64   `json:"targetCurrencies,omitempty"`
+	Currency         responses.Currency   `json:"currency"`
 }
 
 // Implemented methods for the endpoint
@@ -91,12 +93,12 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create the response object and assign the country and iso code
 	var response dashboard
 	response.Country = dashboardConfig.Country
 	response.IsoCode = dashboardConfig.IsoCode
 
-	log.Println("\n\tResponse: ", response)
-
+	// Get the features for the dashboard
 	var features dashboardFeatures
 	countryFeatures, err := getCountryData(dashboardConfig.IsoCode)
 	if err != nil {
@@ -110,15 +112,18 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Merge the features
-	// mergeFeatures(features, countryFeatures)
+	err = mergo.Merge(&features, countryFeatures, mergo.WithOverride, mergo.WithoutDereference)
+	if err != nil {
+		log.Println("Error while trying to merge country features: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to merge country features.",
+			http.StatusInternalServerError,
+		)
+		return
+	}
 
-	features.Currencies = countryFeatures.Currencies
-	features.Population = countryFeatures.Population
-	features.Area = countryFeatures.Area
-	features.Capital = countryFeatures.Capital
-	features.Coordinates = countryFeatures.Coordinates
-
-	// TODO: Get the weather data for the day, then taking mean
+	// Get the meteo features
 	meteoFeatures, err := getMeteoData(features.Coordinates)
 	if err != nil {
 		log.Println("Error while trying to get meteo data: ", err.Error())
@@ -131,12 +136,21 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Merge the features
-	features.Temperature = meteoFeatures.Temperature
-	features.Precipitation = meteoFeatures.Precipitation
+	err = mergo.Merge(&features, meteoFeatures, mergo.WithOverride, mergo.WithoutDereference)
+	if err != nil {
+		log.Println("Error while trying to merge meteo features: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to merge meteo features.",
+			http.StatusInternalServerError,
+		)
+		return
+	}
 
+	// Get the currency features
 	currencyFeatures, err := getCurrencyData(
 		dashboardConfig.Features.TargetCurrencies,
-		countryFeatures.Currencies,
+		countryFeatures.Currency,
 	)
 	if err != nil {
 		log.Println("Error while trying to get currency rates: ", err.Error())
@@ -149,16 +163,36 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Merge the features
-	features.TargetCurrencies = currencyFeatures.TargetCurrencies
+	err = mergo.Merge(&features, currencyFeatures, mergo.WithOverride, mergo.WithoutDereference)
+	if err != nil {
+		log.Println("Error while trying to merge currency features: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to merge currency features.",
+			http.StatusInternalServerError,
+		)
+		return
+	}
 
+	// Assign the features to the response
 	response.Features = features
 	response.LastRetrieval = time.Now()
 
-	log.Println("\n\tResponse: ", response)
+	// Filter the response by the config
+	filteredResponse, err := filterDashboardByConfig(response, dashboardConfig)
+	if err != nil {
+		log.Println("Error while trying to filter dashboard features: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to filter dashboard features.",
+			http.StatusInternalServerError,
+		)
+		return
+	}
 
 	// Marshal the status object to JSON
 	marshaled, err := json.MarshalIndent(
-		response,
+		filteredResponse,
 		"",
 		"\t",
 	)
@@ -177,7 +211,9 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
+// getMeteoData gets the meteo data for the given coordinates.
+// This data includes the mean temperature and precipitation.
+func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) {
 	// Get the weather data from the meteo API
 	r, err1 := http.NewRequest(
 		http.MethodGet,
@@ -191,8 +227,6 @@ func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
 		log.Println("Error in creating request:", err1.Error())
 		return dashboardFeatures{}, fmt.Errorf("error in creating request")
 	}
-
-	log.Println("Request: ", r)
 
 	r.Header.Add("content-type", "application/json")
 
@@ -211,24 +245,20 @@ func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
 		return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
 	}
 
-	// features := dashboardFeatures{
-	// 	Temperature:   meteo.Current.Temperature2M,
-	// 	Precipitation: meteo.Current.Precipitation,
-	// }
 	// Gets the average of all hourly temperatures and rounds to 5 decimal points
 	averageTemperature := float64(int(average(meteo.Hourly.Temperature2M)*100000)) / 100000
 	averagePrecipitation := float64(int(average(meteo.Hourly.Precipitation)*100000)) / 100000
 
-	fmt.Printf("request: %v\n", res)
-	fmt.Printf("length of temp array: %d\n", len(meteo.Hourly.Temperature2M))
 	features := dashboardFeatures{
-		Temperature:   averageTemperature,
-		Precipitation: averagePrecipitation,
+		Temperature:   &averageTemperature,
+		Precipitation: &averagePrecipitation,
 	}
 
 	return features, nil
 }
 
+// getCountryData gets the country data for the given ISO code. This data includes the capital, coordinates, population,
+// area, and currency.
 func getCountryData(isoCode string) (dashboardFeatures, error) {
 	// Get the country data from the restcountries API
 	r, err1 := http.NewRequest(
@@ -265,47 +295,44 @@ func getCountryData(isoCode string) (dashboardFeatures, error) {
 
 	lat := country.Latlng[0]
 	lng := country.Latlng[1]
+	// Task specifies to take the first capital where multiple capitals are available
+	capital := country.Capital[0]
+	// Same goes for currency
+	var currency responses.Currency
+	for key, value := range country.Currencies {
+		currency = value
+		currency.Code = key
+		break
+	}
 
 	features := dashboardFeatures{
-		Capital: country.Capital,
-		Coordinates: inhouse.Coordinates{
+		Capital: &capital,
+		Coordinates: &inhouse.Coordinates{
 			Latitude:  lat,
 			Longitude: lng,
 		},
-		Population: country.Population,
-		Area:       country.Area,
-		Currencies: country.Currencies,
+		Population: &country.Population,
+		Area:       &country.Area,
+		Currency:   currency,
 	}
 
 	return features, nil
 }
 
+// getCurrencyData gets the currency data for the given target currencies. This data includes the exchange rates.
 func getCurrencyData(
 	targetCurrencies []string,
-	currencies map[string]responses.Currencies,
+	exchangeCurrency responses.Currency,
 ) (dashboardFeatures, error) {
 	featuresFromCurrency := dashboardFeatures{
 		TargetCurrencies: make(map[string]float64),
 	}
-	// Task specifies to take the first currency where multiple currencies are available
-	// Therefore, we will only take the first currency from the map
-	if len(currencies) == 0 {
-		log.Println("No currencies found")
-		return dashboardFeatures{}, fmt.Errorf("no currencies found")
-	}
-
-	var exchangeCurrency string
-	for key := range currencies {
-		exchangeCurrency = key
-		break
-	}
-
 	// Get the exchange rates from the currency API
 	r, err1 := http.NewRequest(
 		http.MethodGet,
 		fmt.Sprintf(
-			"%s/%s",
-			utils2.CurrentCurrencyApi, exchangeCurrency,
+			"%s%s",
+			utils2.CurrentCurrencyApi, exchangeCurrency.Code,
 		),
 		nil,
 	)
@@ -315,6 +342,7 @@ func getCurrencyData(
 	}
 
 	r.Header.Add("content-type", "application/json")
+	log.Println("Request: ", r)
 
 	// Issue request
 	res, err2 := utils2.Client.Do(r)
@@ -345,34 +373,7 @@ func getCurrencyData(
 	return featuresFromCurrency, nil
 }
 
-func mergeFeatures(a, b dashboardFeatures) {
-	ra := reflect.ValueOf(&a).Elem()
-	rb := reflect.ValueOf(&b).Elem()
-
-	numFields := ra.NumField()
-
-	for i := 0; i < numFields; i++ {
-		log.Println(
-			"\n\tChecking field: ", ra.Type().Field(i).Name+
-				" with type: ", ra.Field(i).Kind(),
-		)
-		fieldA := ra.Field(i)
-		fieldB := rb.Field(i)
-
-		switch fieldA.Kind() {
-		// case reflect.Float64, reflect.Kind():
-		case reflect.Float64, reflect.Slice, reflect.Struct, reflect.Int, reflect.Map:
-			// case reflect.Ptr:
-
-			if fieldA.IsNil() {
-				fieldA.Set(fieldB)
-			}
-		default:
-			log.Println("Unsupported type when merging features: ", fieldA.Kind())
-		}
-	}
-}
-
+// average calculates the mean of a slice of float64 elements.
 func average(elements []float64) float64 {
 	var sum float64
 	if len(elements) == 0 {
@@ -382,4 +383,49 @@ func average(elements []float64) float64 {
 		sum += element
 	}
 	return sum / float64(len(elements))
+}
+
+// filterDashboardByConfig filters the dashboard features by the given config.
+func filterDashboardByConfig(oldDashboard dashboard, config requests.DashboardConfig) (
+	dashboard,
+	error,
+) {
+	if config.Country != oldDashboard.Country {
+		return dashboard{}, fmt.Errorf("country does not match")
+	}
+	// Returns a new dashboard with the features filtered by the config
+	newDashboard := dashboard{
+		Country:       oldDashboard.Country,
+		IsoCode:       oldDashboard.IsoCode,
+		LastRetrieval: oldDashboard.LastRetrieval,
+	}
+
+	if config.Features.Temperature {
+		newDashboard.Features.Temperature = oldDashboard.Features.Temperature
+	}
+	if config.Features.Precipitation {
+		newDashboard.Features.Precipitation = oldDashboard.Features.Precipitation
+	}
+	if config.Features.Capital {
+		newDashboard.Features.Capital = oldDashboard.Features.Capital
+	}
+	if config.Features.Coordinates {
+		newDashboard.Features.Coordinates = oldDashboard.Features.Coordinates
+	}
+	if config.Features.Population {
+		newDashboard.Features.Population = oldDashboard.Features.Population
+	}
+	if config.Features.Area {
+		newDashboard.Features.Area = oldDashboard.Features.Area
+	}
+
+	// Translocate the target currencies
+	newDashboard.Features.TargetCurrencies = make(map[string]float64)
+	for key, value := range oldDashboard.Features.TargetCurrencies {
+		newDashboard.Features.TargetCurrencies[key] = value
+	}
+
+	newDashboard.Features.Currency = oldDashboard.Features.Currency
+
+	return newDashboard, nil
 }

@@ -1,0 +1,14 @@
+- Make tests
+
+- Docker:
+    - Make it take the .env file
+    - Make it take the firebase credentials file
+
+- Revise the code
+    - Make it more readable
+    - Make it more efficient
+    - Project structure (structs etc, constant errors etc)
+
+- Middleware:
+    - Check if the user requests are valid
+        - Country and code needs to be same
