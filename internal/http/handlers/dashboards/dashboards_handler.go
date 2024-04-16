@@ -29,7 +29,7 @@ type dashboardFeatures struct {
 	Coordinates      *inhouse.Coordinates `json:"coordinates,omitempty"`
 	Population       *int                 `json:"population,omitempty"`
 	Area             *float64             `json:"area,omitempty"`
-	TargetCurrencies map[string]float64   `json:"targetCurrencies"`
+	TargetCurrencies map[string]float64   `json:"targetCurrencies,omitempty"`
 	Currency         responses.Currency   `json:"currency"`
 }
 
