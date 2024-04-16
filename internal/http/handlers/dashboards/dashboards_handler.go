@@ -23,14 +23,14 @@ type dashboard struct {
 }
 
 type dashboardFeatures struct {
-	Temperature      float64                         `json:"temperature"`
-	Precipitation    float64                         `json:"precipitation"`
-	Capital          []string                        `json:"capital"`
-	Coordinates      inhouse.Coordinates             `json:"coordinates"`
-	Population       int                             `json:"population"`
-	Area             float64                         `json:"area"`
-	TargetCurrencies map[string]float64              `json:"targetCurrencies"`
-	Currencies       map[string]responses.Currencies `json:"currencies"`
+	Temperature      *float64             `json:"temperature,omitempty"`
+	Precipitation    *float64             `json:"precipitation,omitempty"`
+	Capital          *string              `json:"capital,omitempty"`
+	Coordinates      *inhouse.Coordinates `json:"coordinates,omitempty"`
+	Population       *int                 `json:"population,omitempty"`
+	Area             *float64             `json:"area,omitempty"`
+	TargetCurrencies map[string]float64   `json:"targetCurrencies"`
+	Currency         responses.Currency   `json:"currency"`
 }
 
 // Implemented methods for the endpoint
@@ -112,7 +112,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Merge the features
 	// mergeFeatures(features, countryFeatures)
 
-	features.Currencies = countryFeatures.Currencies
+	features.Currency = countryFeatures.Currency
 	features.Population = countryFeatures.Population
 	features.Area = countryFeatures.Area
 	features.Capital = countryFeatures.Capital
@@ -136,7 +136,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	currencyFeatures, err := getCurrencyData(
 		dashboardConfig.Features.TargetCurrencies,
-		countryFeatures.Currencies,
+		countryFeatures.Currency,
 	)
 	if err != nil {
 		log.Println("Error while trying to get currency rates: ", err.Error())
@@ -154,11 +154,23 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	response.Features = features
 	response.LastRetrieval = time.Now()
 
-	log.Println("\n\tResponse: ", response)
+	filteredResponse, err := filterDashboardByConfig(response, dashboardConfig)
+	if err != nil {
+		log.Println("Error while trying to filter dashboard features: ", err.Error())
+		http.Error(
+			w,
+			"Error while trying to filter dashboard features.",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	log.Println("Old response: ", response)
+	log.Println("Filtered response: ", filteredResponse)
 
 	// Marshal the status object to JSON
 	marshaled, err := json.MarshalIndent(
-		response,
+		filteredResponse,
 		"",
 		"\t",
 	)
@@ -177,7 +189,7 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
+func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) {
 	// Get the weather data from the meteo API
 	r, err1 := http.NewRequest(
 		http.MethodGet,
@@ -222,8 +234,8 @@ func getMeteoData(coordinates inhouse.Coordinates) (dashboardFeatures, error) {
 	fmt.Printf("request: %v\n", res)
 	fmt.Printf("length of temp array: %d\n", len(meteo.Hourly.Temperature2M))
 	features := dashboardFeatures{
-		Temperature:   averageTemperature,
-		Precipitation: averagePrecipitation,
+		Temperature:   &averageTemperature,
+		Precipitation: &averagePrecipitation,
 	}
 
 	return features, nil
@@ -265,16 +277,25 @@ func getCountryData(isoCode string) (dashboardFeatures, error) {
 
 	lat := country.Latlng[0]
 	lng := country.Latlng[1]
+	// Task specifies to take the first capital where multiple capitals are available
+	capital := country.Capital[0]
+	// Same goes for currency
+	var currency responses.Currency
+	for key, value := range country.Currencies {
+		currency = value
+		currency.Code = key
+		break
+	}
 
 	features := dashboardFeatures{
-		Capital: country.Capital,
-		Coordinates: inhouse.Coordinates{
+		Capital: &capital,
+		Coordinates: &inhouse.Coordinates{
 			Latitude:  lat,
 			Longitude: lng,
 		},
-		Population: country.Population,
-		Area:       country.Area,
-		Currencies: country.Currencies,
+		Population: &country.Population,
+		Area:       &country.Area,
+		Currency:   currency,
 	}
 
 	return features, nil
@@ -282,30 +303,17 @@ func getCountryData(isoCode string) (dashboardFeatures, error) {
 
 func getCurrencyData(
 	targetCurrencies []string,
-	currencies map[string]responses.Currencies,
+	exchangeCurrency responses.Currency,
 ) (dashboardFeatures, error) {
 	featuresFromCurrency := dashboardFeatures{
 		TargetCurrencies: make(map[string]float64),
 	}
-	// Task specifies to take the first currency where multiple currencies are available
-	// Therefore, we will only take the first currency from the map
-	if len(currencies) == 0 {
-		log.Println("No currencies found")
-		return dashboardFeatures{}, fmt.Errorf("no currencies found")
-	}
-
-	var exchangeCurrency string
-	for key := range currencies {
-		exchangeCurrency = key
-		break
-	}
-
 	// Get the exchange rates from the currency API
 	r, err1 := http.NewRequest(
 		http.MethodGet,
 		fmt.Sprintf(
-			"%s/%s",
-			utils2.CurrentCurrencyApi, exchangeCurrency,
+			"%s%s",
+			utils2.CurrentCurrencyApi, exchangeCurrency.Code,
 		),
 		nil,
 	)
@@ -315,6 +323,7 @@ func getCurrencyData(
 	}
 
 	r.Header.Add("content-type", "application/json")
+	log.Println("Request: ", r)
 
 	// Issue request
 	res, err2 := utils2.Client.Do(r)
@@ -382,4 +391,48 @@ func average(elements []float64) float64 {
 		sum += element
 	}
 	return sum / float64(len(elements))
+}
+
+func filterDashboardByConfig(oldDashboard dashboard, config requests.DashboardConfig) (
+	dashboard,
+	error,
+) {
+	if config.Country != oldDashboard.Country {
+		return dashboard{}, fmt.Errorf("country does not match")
+	}
+	// Returns a new dashboard with the features filtered by the config
+	newDashboard := dashboard{
+		Country:       oldDashboard.Country,
+		IsoCode:       oldDashboard.IsoCode,
+		LastRetrieval: oldDashboard.LastRetrieval,
+	}
+
+	if config.Features.Temperature {
+		newDashboard.Features.Temperature = oldDashboard.Features.Temperature
+	}
+	if config.Features.Precipitation {
+		newDashboard.Features.Precipitation = oldDashboard.Features.Precipitation
+	}
+	if config.Features.Capital {
+		newDashboard.Features.Capital = oldDashboard.Features.Capital
+	}
+	if config.Features.Coordinates {
+		newDashboard.Features.Coordinates = oldDashboard.Features.Coordinates
+	}
+	if config.Features.Population {
+		newDashboard.Features.Population = oldDashboard.Features.Population
+	}
+	if config.Features.Area {
+		newDashboard.Features.Area = oldDashboard.Features.Area
+	}
+
+	// Translocate the target currencies
+	newDashboard.Features.TargetCurrencies = make(map[string]float64)
+	for key, value := range oldDashboard.Features.TargetCurrencies {
+		newDashboard.Features.TargetCurrencies[key] = value
+	}
+
+	newDashboard.Features.Currency = oldDashboard.Features.Currency
+
+	return newDashboard, nil
 }
