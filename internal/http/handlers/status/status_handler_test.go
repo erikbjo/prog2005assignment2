@@ -2,8 +2,7 @@ package status
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
-	"assignment-2/internal/utils"
+	"assignment-2/internal/mock"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,16 +14,14 @@ import (
 func TestMain(m *testing.M) {
 	// Setup function
 	log.Println("Setup for testing")
-	utils.SetupForTesting()
-	// Initialize Firebase for testing
-	firebase.InitializeForTesting()
+	mock.InitForTesting()
 
 	// Run tests
 	m.Run()
 
 	// Teardown function
 	log.Println("Teardown for testing")
-	utils.TeardownAfterTesting()
+	mock.TeardownAfterTesting()
 
 }
 
