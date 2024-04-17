@@ -15,8 +15,13 @@ import (
 func GetIDFromRequest(r *http.Request) (string, error) {
 	id := r.PathValue("id")
 	if id == "" {
-		log.Println("ID not provided")
-		return "", fmt.Errorf("ID not provided")
+		// Special case: for testing purposes, we allow the ID to be passed as a query parameter
+		id = r.URL.Query().Get("id")
+		log.Println("ID from query parameter: ", id, " URL: ", r.URL.String())
+		if id == "" {
+			log.Println("ID not provided")
+			return "", fmt.Errorf("ID not provided")
+		}
 	}
 
 	return id, nil

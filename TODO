@@ -1,4 +1,5 @@
 - Make tests
+- Make firestore emulator run automatically, either in the docker or in the tests
 
 - Docker:
     - Make it take the .env file

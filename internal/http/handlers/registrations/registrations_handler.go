@@ -162,6 +162,8 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&content); err != nil {
 		log.Println("Error while decoding json: ", err.Error())
+		http.Error(w, "Error while decoding json.", http.StatusBadRequest)
+		return
 	}
 
 	content.LastChange = time.Now()
