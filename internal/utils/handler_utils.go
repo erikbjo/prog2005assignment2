@@ -15,6 +15,8 @@ var (
 	CurrentMeteoApi         = constants.MeteoApi
 )
 
+const FirestoreEmulatorHost = "FIRESTORE_EMULATOR_HOST"
+
 // StartTime is the time the server started
 var StartTime = time.Now()
 
@@ -23,10 +25,29 @@ var Client = &http.Client{
 	Timeout: 3 * time.Second,
 }
 
-// SetStubsForTesting Use self-hosted stubs for testing
-func SetStubsForTesting() {
+// setStubsForTesting Use self-hosted stubs for testing
+func setStubsForTesting() {
 	// TODO: Implement the stubs to mock
 	CurrentRestCountriesApi = constants.TestRestCountriesApi
 	CurrentCurrencyApi = constants.TestCurrencyApi
 	CurrentMeteoApi = constants.TestMeteoApi
+}
+
+func SetupForTesting() {
+
+	// firebase.Initialize()
+	// Set stubs for testing
+	setStubsForTesting()
+}
+
+func TeardownAfterTesting() {
+	// // Clean up any resources after all tests have been executed
+	// firebase.Close()
+	//
+	// // firebase emulators:stop
+	// cmd := exec.Command("firebase", "emulators:stop")
+	// if err := cmd.Run(); err != nil {
+	// 	log.Fatalf("Failed to stop Firestore emulator: %v", err)
+	// }
+	// os.Exit(0)
 }

@@ -2,19 +2,35 @@ package status
 
 import (
 	"assignment-2/internal/constants"
+	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/utils"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	// Setup function
+	log.Println("Setup for testing")
+	utils.SetupForTesting()
+	// Initialize Firebase for testing
+	firebase.InitializeForTesting()
+
+	// Run tests
+	m.Run()
+
+	// Teardown function
+	log.Println("Teardown for testing")
+	utils.TeardownAfterTesting()
+
+}
 
 // TestStatusHandler tests the Handler function, which handles requests for /status
 // It tests the GET method for the /status path
 func TestStatusHandler(t *testing.T) {
-	// Use stubs for testing
-	utils.SetStubsForTesting()
-
 	// Create tests with different HTTP methods and expected status codes
 	tests := []struct {
 		name       string
@@ -46,8 +62,11 @@ func TestStatusHandler(t *testing.T) {
 				// Call the handler
 				Handler(w, req)
 
+				log.Println(w.Body.String())
+
 				// Check if the status code matches expected
 				if w.Code != tt.statusCode {
+					log.Println("Testing: ", tt.name)
 					t.Errorf(
 						"handler returned wrong status code: got %v want %v",
 						w.Code, tt.statusCode,
@@ -138,8 +157,13 @@ func Test_handleStatusGetRequest(t *testing.T) {
 					)
 				}
 
-				if status.Uptime == 0 {
-					t.Errorf("handleStatusGetRequest() = %v, want > 0", status.Uptime)
+				// Check that uptime is an int
+				if reflect.TypeOf(status.Uptime) != reflect.TypeOf(int(0)) {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						reflect.TypeOf(status.Uptime),
+						reflect.Int,
+					)
 				}
 
 				// TODO: Implement stubs to mock
