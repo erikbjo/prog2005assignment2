@@ -271,6 +271,8 @@ func getCountryData(isoCode string) (dashboardFeatures, error) {
 		return dashboardFeatures{}, fmt.Errorf("error in creating request")
 	}
 
+	log.Println("Request url: ", r.URL)
+
 	r.Header.Add("content-type", "application/json")
 
 	// Issue request

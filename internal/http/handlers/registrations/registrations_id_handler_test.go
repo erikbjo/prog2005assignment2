@@ -41,8 +41,6 @@ func TestHandlerWithID(t *testing.T) {
 				// Call the handler
 				HandlerWithID(w, req)
 
-				log.Println(w.Body.String())
-
 				// Check if the status code matches expected
 				if w.Code != tt.statusCode {
 					log.Println("Testing: ", tt.name)

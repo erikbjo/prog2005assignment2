@@ -38,7 +38,6 @@ func TestMain(m *testing.M) {
 	// Teardown function
 	log.Println("Teardown for testing")
 	mock.TeardownAfterTesting()
-
 }
 
 func TestHandlerWithoutID(t *testing.T) {
@@ -71,8 +70,6 @@ func TestHandlerWithoutID(t *testing.T) {
 
 				// Call the handler
 				HandlerWithoutID(w, req)
-
-				log.Println(w.Body.String())
 
 				// Check if the status code matches expected
 				if w.Code != tt.statusCode {
