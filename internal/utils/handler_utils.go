@@ -22,11 +22,3 @@ var StartTime = time.Now()
 var Client = &http.Client{
 	Timeout: 3 * time.Second,
 }
-
-// SetStubsForTesting Use self-hosted stubs for testing
-func SetStubsForTesting() {
-	// TODO: Implement the stubs to mock
-	CurrentRestCountriesApi = constants.TestRestCountriesApi
-	CurrentCurrencyApi = constants.TestCurrencyApi
-	CurrentMeteoApi = constants.TestMeteoApi
-}

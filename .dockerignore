@@ -10,3 +10,10 @@
 .deploy
 .dockerignore
 .gitignore
+firebase.json
+firebase-debug.log
+firebase-debug.log.json
+firestore-debug.log
+firestore-debug.log.json
+ui-debug.log
+ui-debug.log.json

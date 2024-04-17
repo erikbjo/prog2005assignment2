@@ -16,14 +16,14 @@ import (
 // A Status struct to hold the status of the server, including the status of the APIs and the version
 // of the server.
 type status struct {
-	CountriesAPI   int     `json:"countries_api"`
-	MeteoAPI       int     `json:"meteo_api"`
-	CurrencyAPI    int     `json:"currency_api"`
-	DashboardDB    int     `json:"dashboard_db"`
-	NotificationDB int     `json:"notification_db"`
-	Webhooks       int     `json:"webhooks"`
-	Version        string  `json:"version"`
-	Uptime         float64 `json:"uptime"`
+	CountriesAPI   int    `json:"countries_api"`
+	MeteoAPI       int    `json:"meteo_api"`
+	CurrencyAPI    int    `json:"currency_api"`
+	DashboardDB    int    `json:"dashboard_db"`
+	NotificationDB int    `json:"notification_db"`
+	Webhooks       int    `json:"webhooks"`
+	Version        string `json:"version"`
+	Uptime         int    `json:"uptime"`
 }
 
 // implementedMethods is a list of the implemented HTTP methods for the status endpoint.
@@ -78,7 +78,7 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 		NotificationDB: firebase.GetStatusCodeOfCollection(w, firebase.NotificationCollection),
 		Webhooks:       http.StatusNotImplemented,
 		Version:        constants.Version,
-		Uptime:         math.Round(time.Since(utils.StartTime).Seconds()),
+		Uptime:         int(math.Round(time.Since(utils.StartTime).Seconds())),
 	}
 
 	// Marshal the status object to JSON

@@ -5,10 +5,9 @@ import (
 	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/http/handlers"
 	"assignment-2/internal/http/handlers/dashboards"
-	notifications2 "assignment-2/internal/http/handlers/notifications"
-	registrations2 "assignment-2/internal/http/handlers/registrations"
+	"assignment-2/internal/http/handlers/notifications"
+	"assignment-2/internal/http/handlers/registrations"
 	"assignment-2/internal/http/handlers/status"
-	stubs2 "assignment-2/internal/mock/stubs"
 	"assignment-2/internal/utils"
 	"log"
 	"net/http"
@@ -40,44 +39,33 @@ func Start() {
 	mux.HandleFunc(constants.StatusPath[:len(constants.StatusPath)-1], status.Handler)
 
 	// Registrations
-	mux.HandleFunc(constants.RegistrationsPath, registrations2.HandlerWithoutID)
+	mux.HandleFunc(constants.RegistrationsPath, registrations.HandlerWithoutID)
 	mux.HandleFunc(
 		constants.RegistrationsPath[:len(constants.RegistrationsPath)-1],
-		registrations2.HandlerWithoutID,
+		registrations.HandlerWithoutID,
 	)
 
 	// Registrations with ID
-	mux.HandleFunc(constants.RegistrationsPath+"{id}", registrations2.HandlerWithID)
+	mux.HandleFunc(constants.RegistrationsPath+"{id}", registrations.HandlerWithID)
 
 	// Dashboards
 	mux.HandleFunc(constants.DashboardsPath+"{id}", dashboards.HandlerWithID)
 
 	// Notifications
-	mux.HandleFunc(constants.NotificationsPath, notifications2.HandlerWithoutID)
+	mux.HandleFunc(constants.NotificationsPath, notifications.HandlerWithoutID)
 	mux.HandleFunc(
 		constants.NotificationsPath[:len(constants.NotificationsPath)-1],
-		notifications2.HandlerWithoutID,
+		notifications.HandlerWithoutID,
 	)
 
 	// Notifications with ID
-	mux.HandleFunc(constants.NotificationsPath+"{id}", notifications2.HandlerWithID)
+	mux.HandleFunc(constants.NotificationsPath+"{id}", notifications.HandlerWithID)
 
 	fs := http.FileServer(http.Dir("web"))
 	mux.Handle("/web/", http.StripPrefix("/web/", fs))
 
 	// Default, redirect to /web/
 	mux.HandleFunc("/", handlers.DefaultHandler)
-
-	// Set up stubs for testing
-	mux.HandleFunc(constants.TestMeteoApi, stubs2.MeteoHandler)
-	mux.HandleFunc(constants.TestRestCountriesApi, stubs2.RestCountriesHandler)
-	mux.HandleFunc(constants.TestCurrencyApi, stubs2.CurrencyHandler)
-
-	// mux.HandleFunc("/dashboard/v1/registrations/", listRegistrationsHandler)
-	// mux.HandleFunc("/dashboard/v1/registrations/{id}", registrationsHandler)
-
-	// mux.HandleFunc("/dbTest/", db.HandleDB)
-	// mux.HandleFunc("/dbTest/{id}/", db.HandleDB)
 
 	// Start server
 	log.Println("Starting server on port " + port + " ...")

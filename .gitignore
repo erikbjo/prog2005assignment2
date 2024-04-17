@@ -1,6 +1,14 @@
 .idea
 serviceAccountKey.json
 
+firebase.json
+firebase-debug.log
+firebase-debug.log.json
+firestore-debug.log
+firestore-debug.log.json
+ui-debug.log
+ui-debug.log.json
+
 # Default ignored files
 /shelf/
 /workspace.xml

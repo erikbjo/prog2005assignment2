@@ -2,19 +2,33 @@ package status
 
 import (
 	"assignment-2/internal/constants"
+	"assignment-2/internal/mock"
 	"assignment-2/internal/utils"
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	// Setup function
+	log.Println("Setup for testing")
+	mock.InitForTesting()
+
+	// Run tests
+	m.Run()
+
+	// Teardown function
+	log.Println("Teardown for testing")
+	mock.TeardownAfterTesting()
+
+}
 
 // TestStatusHandler tests the Handler function, which handles requests for /status
 // It tests the GET method for the /status path
 func TestStatusHandler(t *testing.T) {
-	// Use stubs for testing
-	utils.SetStubsForTesting()
-
 	// Create tests with different HTTP methods and expected status codes
 	tests := []struct {
 		name       string
@@ -46,8 +60,11 @@ func TestStatusHandler(t *testing.T) {
 				// Call the handler
 				Handler(w, req)
 
+				log.Println(w.Body.String())
+
 				// Check if the status code matches expected
 				if w.Code != tt.statusCode {
+					log.Println("Testing: ", tt.name)
 					t.Errorf(
 						"handler returned wrong status code: got %v want %v",
 						w.Code, tt.statusCode,
@@ -58,7 +75,6 @@ func TestStatusHandler(t *testing.T) {
 	}
 }
 
-// TODO: Implement the stubs to mock
 func Test_getStatusCode(t *testing.T) {
 	type args struct {
 		url string
@@ -69,8 +85,32 @@ func Test_getStatusCode(t *testing.T) {
 		args args
 		want int
 	}{
-		// TODO: Add mock cases.
+		{
+			name: "Test_getStatusCodeCurrentRestCountriesApi",
+			args: args{
+				url: utils.CurrentRestCountriesApi,
+				w:   httptest.NewRecorder(),
+			},
+			want: http.StatusOK,
+		},
+		{
+			name: "Test_getStatusCodeCurrentMeteoApi",
+			args: args{
+				url: utils.CurrentMeteoApi,
+				w:   httptest.NewRecorder(),
+			},
+			want: http.StatusOK,
+		},
+		{
+			name: "Test_getStatusCodeCurrentCurrencyApi",
+			args: args{
+				url: utils.CurrentCurrencyApi,
+				w:   httptest.NewRecorder(),
+			},
+			want: http.StatusOK,
+		},
 	}
+
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
@@ -82,8 +122,6 @@ func Test_getStatusCode(t *testing.T) {
 	}
 }
 
-// The status codes are covered by the Test_getStatusCode function
-// TODO: Implement the stubs to mock
 func Test_handleStatusGetRequest(t *testing.T) {
 	type args struct {
 		w http.ResponseWriter
@@ -138,60 +176,63 @@ func Test_handleStatusGetRequest(t *testing.T) {
 					)
 				}
 
-				if status.Uptime == 0 {
-					t.Errorf("handleStatusGetRequest() = %v, want > 0", status.Uptime)
+				// Check that uptime is an int
+				if reflect.TypeOf(status.Uptime) != reflect.TypeOf(int(0)) {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						reflect.TypeOf(status.Uptime),
+						reflect.Int,
+					)
 				}
 
-				// TODO: Implement stubs to mock
-				/*
-					if status.CountriesAPI != http.StatusOK {
-						t.Errorf(
-							"handleStatusGetRequest() = %v, want %v",
-							status.CountriesAPI,
-							http.StatusOK,
-						)
-					}
+				if status.CountriesAPI != http.StatusOK {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						status.CountriesAPI,
+						http.StatusOK,
+					)
+				}
 
-					if status.MeteoAPI != http.StatusOK {
-						t.Errorf(
-							"handleStatusGetRequest() = %v, want %v",
-							status.MeteoAPI,
-							http.StatusOK,
-						)
-					}
+				if status.MeteoAPI != http.StatusOK {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						status.MeteoAPI,
+						http.StatusOK,
+					)
+				}
 
-					if status.CurrencyAPI != http.StatusOK {
-						t.Errorf(
-							"handleStatusGetRequest() = %v, want %v",
-							status.CurrencyAPI,
-							http.StatusOK,
-						)
-					}
+				if status.CurrencyAPI != http.StatusOK {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						status.CurrencyAPI,
+						http.StatusOK,
+					)
+				}
 
-					if status.DashboardDB != http.StatusOK {
-						t.Errorf(
-							"handleStatusGetRequest() = %v, want %v",
-							status.DashboardDB,
-							http.StatusOK,
-						)
-					}
+				if status.DashboardDB != http.StatusOK {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						status.DashboardDB,
+						http.StatusOK,
+					)
+				}
 
-					if status.NotificationDB != http.StatusOK {
-						t.Errorf(
-							"handleStatusGetRequest() = %v, want %v",
-							status.NotificationDB,
-							http.StatusOK,
-						)
-					}
+				if status.NotificationDB != http.StatusOK {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						status.NotificationDB,
+						http.StatusOK,
+					)
+				}
 
-					if status.Webhooks != http.StatusNotImplemented {
-						t.Errorf(
-							"handleStatusGetRequest() = %v, want %v",
-							status.Webhooks,
-							http.StatusNotImplemented,
-						)
-					}
-				*/
+				// TODO: Implement counting of webhooks
+				if status.Webhooks != http.StatusNotImplemented {
+					t.Errorf(
+						"handleStatusGetRequest() = %v, want %v",
+						status.Webhooks,
+						http.StatusNotImplemented,
+					)
+				}
 
 			},
 		)

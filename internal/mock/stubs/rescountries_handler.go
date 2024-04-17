@@ -9,8 +9,18 @@ import (
 func RestCountriesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
+		// cwd, err := os.Getwd()
+		// if err != nil {
+		// 	fmt.Println("Error:", err)
+		// 	return
+		// }
+
+		// Print the current working directory
+		// fmt.Println("Current working directory:", cwd)
+
 		w.Header().Add("content-type", "application/json")
-		output := ParseFile("./mock/resources/restcountries_no.json")
+		// Hideous way to get the path to the mock resources, but it works for now
+		output := ParseFile("../../../mock/resources/restcountries_no.json")
 
 		_, err := fmt.Fprint(w, string(output))
 		if err != nil {
