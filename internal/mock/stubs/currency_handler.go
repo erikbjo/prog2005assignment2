@@ -10,7 +10,7 @@ func CurrencyHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Add("content-type", "application/json")
-		output := ParseFile("./mock/resources/currency_nok.json")
+		output := ParseFile("../../../mock/resources/currency_nok.json")
 
 		_, err := fmt.Fprint(w, string(output))
 		if err != nil {

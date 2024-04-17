@@ -10,7 +10,7 @@ func MeteoHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		w.Header().Add("content-type", "application/json")
-		output := ParseFile("./mock/resources/meteo_norway.json")
+		output := ParseFile("../../../mock/resources/meteo_norway.json")
 
 		_, err := fmt.Fprint(w, string(output))
 		if err != nil {
