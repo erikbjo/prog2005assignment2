@@ -612,6 +612,26 @@ The service can be deployed using the following command:
 docker compose up -d --build
 ```
 
+TODO: Implement/remove this
+
+```dockerfile
+# Install Node.js and npm for firebase
+RUN apt-get update
+RUN curl -sL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
+RUN bash /tmp/nodesource_setup.sh
+RUN apt-get install -y nodejs
+
+# Java
+RUN apt install default-jre -y
+RUN apt install default-jdk -y
+
+# Sleep for 5 seconds to let the installation finish
+#RUN sleep 5
+
+# Install firebase for testing
+RUN npm install -g firebase-tools
+```
+
 ### Logs
 
 ```bash
@@ -625,11 +645,15 @@ docker logs -f <container_name>
 
 ## Testing
 
-Run the following command to run the tests:
+Run the run_tests.sh script to run all tests. Add +x permission to the script if needed.
+Firebase installation and authentication is required for most tests, so tests will fail if not set up.
+See coverage report for information about test coverage.
 
 ```bash
-go test ./...
+./run_tests.sh
 ```
+
+External services are mocked in the tests, so no external services are required to run the tests.
 
 ## Known issues
 

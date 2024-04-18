@@ -1,4 +1,4 @@
-FROM golang:1.22 as builder
+FROM golang:1.22 AS builder
 
 LABEL authors="erbj@stud.ntnu.no,simonhou@stud.ntnu.no"
 LABEL stage=builder
@@ -12,11 +12,11 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o executable ./cmd/api/main.go
 
 # Define exposed port
-EXPOSE 8080
+EXPOSE 8000 8001
 
 # Create .env file
 # TODO: Export local .env file to container, this is a temporary solution
-RUN echo "PORT=8080" > .env
+RUN echo 'PORT="8000"' > .env
 
 # Entrypoint command
 ENTRYPOINT ["./executable"]
