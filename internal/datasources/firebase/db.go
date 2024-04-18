@@ -144,12 +144,12 @@ func GetDocument[T any](
 /*
 GetAllDocuments Returns all documents in collection.
 */
-func GetAllDocuments(collection string) (
-	[]interface{},
+func GetAllDocuments[T any](collection string) (
+	[]T,
 	error,
 ) {
 	// interface of document content
-	var allData []interface{}
+	var allData []T
 
 	// Collective retrieval of documents
 	iter := client.Collection(collection).Documents(
@@ -166,14 +166,14 @@ func GetAllDocuments(collection string) (
 			return nil, err
 		}
 
-		var mapOfContent map[string]interface{}
-		if err3 := doc.DataTo(&mapOfContent); err3 != nil {
-			log.Println("Error unmarshalling document mapOfContent:", err3)
+		var data T
+		if err3 := doc.DataTo(&data); err3 != nil {
+			log.Println("Error unmarshalling document data:", err3)
 			return nil, err3
 		}
 
 		// Append the document to the slice
-		allData = append(allData, mapOfContent)
+		allData = append(allData, data)
 	}
 	return allData, nil
 }

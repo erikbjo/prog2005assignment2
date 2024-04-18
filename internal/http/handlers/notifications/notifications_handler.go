@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 )
 
 // Implemented methods for the endpoint
@@ -53,7 +52,7 @@ func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 
 func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Get the all notification documents
-	allDocuments, err2 := firebase.GetAllDocuments(firebase.NotificationCollection)
+	allDocuments, err2 := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
 	if err2 != nil {
 		http.Error(
 			w,
@@ -99,7 +98,6 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	content.Time = time.Now()
 	content.ID = utils.GenerateRandomID()
 
 	// Save the Notification to the database
