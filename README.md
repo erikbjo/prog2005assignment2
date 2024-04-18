@@ -85,8 +85,8 @@ Body (exemplary code for registered configuration):
 
 ```json
 {
-  "id": 1,
-  "lastChange": "2024-02-29 12:31"
+  "id": "621effa4",
+  "lastChange": "2024-04-18T16:30:38.066008+02:00"
 }
 
 ```
@@ -109,7 +109,7 @@ Path: /dashboard/v1/registrations/{id}
 Example request:
 
 ```http request
-/dashboard/v1/registrations/1
+/dashboard/v1/registrations/621effa4
 ```
 
 ##### Response
@@ -121,23 +121,22 @@ Body (exemplary code):
 
 ```json
 {
-  "id": 1,
+  "id": "621effa4",
   "country": "Norway",
   "isoCode": "NO",
   "features": {
     "temperature": true,
     "precipitation": true,
-    "capital": true,
-    "coordinates": true,
+    "capital": false,
+    "coordinates": false,
     "population": true,
-    "area": false,
+    "area": true,
     "targetCurrencies": [
       "EUR",
-      "USD",
-      "SEK"
+      "USD"
     ]
   },
-  "lastChange": "20240229 14:07"
+  "lastChange": "2024-04-18T14:30:38.066008Z"
 }
 ```
 
@@ -164,53 +163,67 @@ Body (exemplary code):
 ```json lines
 [
   {
-    "id": 1,
-    "country": "Norway",
-    "isoCode": "NO",
+    "id": "994175d9",
+    "country": "Sweden",
+    "isoCode": "SE",
     "features": {
       "temperature": true,
       "precipitation": true,
       "capital": true,
       "coordinates": true,
       "population": true,
-      "area": false,
+      "area": true,
       "targetCurrencies": [
         "EUR",
         "USD",
-        "SEK"
+        "NOK"
       ]
     },
-    "lastChange": "20240229 14:07"
+    "lastChange": "2024-04-16T11:31:05.258726Z"
   },
   {
-    "id": 2,
-    "country": "Denmark",
-    "isoCode": "DK",
+    "id": "a60a9989",
+    "country": "Sweden",
+    "isoCode": "SE",
     "features": {
-      "temperature": false,
+      "temperature": true,
       "precipitation": true,
       "capital": true,
       "coordinates": true,
-      "population": false,
+      "population": true,
       "area": true,
       "targetCurrencies": [
-        "NOK",
-        "MYR",
-        "JPY",
-        "EUR"
+        "EUR",
+        "USD",
+        "NOK"
       ]
     },
-    "lastChange": "20240224 08:27"
-  },
-  ...
+    "lastChange": "2024-04-16T13:01:12.452834Z"
+  }
 ]
 ```
 
 The response should return a collection of return all stored configurations.
 
-TODO: Implement/remove this
+#### View header of all registered dashboard configurations
 
-**Advanced Task:** Implement the `HEAD` method functionality (only return the header, not the body).
+Enables retrieval the header of all registered dashboard configurations.
+
+##### Request
+
+The following shows a request for the header of all registered dashboard configurations.
+
+```text
+Method: HEAD
+Path: /dashboard/v1/registrations/
+```
+
+##### Response
+
+Empty response with the header information.
+
+* Status code: Appropriate error code.
+* Body: empty
 
 #### Replace a specific registered dashboard configuration
 
@@ -228,7 +241,7 @@ Path: /dashboard/v1/registrations/{id}
 
 * `id` is the ID associated with the specific configuration.
 
-Example request: ```/dashboard/v1/registrations/1```
+Example request: ```/dashboard/v1/registrations/621effa4```
 
 Body (exemplary code):
 
@@ -286,7 +299,7 @@ Path: /dashboard/v1/registrations/{id}
 Example request:
 
 ```http request
-/dashboard/v1/registrations/1
+/dashboard/v1/registrations/621effa4
 ```
 
 ##### Response
@@ -319,7 +332,7 @@ Path: /dashboard/v1/dashboards/{id}
 Example request:
 
 ```http request
-/dashboard/v1/dashboards/1
+/dashboard/v1/dashboards/621effa4
 ```
 
 ##### Response
@@ -334,34 +347,26 @@ Body (exemplary code):
   "country": "Norway",
   "isoCode": "NO",
   "features": {
-    // Mean temperature across all forecasted temperature values for country's coordinates
-    "temperature": -1.2,
-    // Mean precipitation across all returned precipitation values
-    "precipitation": 0.80,
-    // Capital: Where multiple values exist, take the first
+    "precipitation": 0,
     "capital": "Oslo",
-    // Those are the country geocoordinates
     "coordinates": {
-      "latitude": 62.0,
-      "longitude": 10.0
+      "latitude": 62,
+      "longitude": 10
     },
     "population": 5379475,
-    "area": 323802.0,
-    // this is the current NOK to EUR exchange rate (where multiple currencies exist for a given country, take the first)
     "targetCurrencies": {
-      "EUR": 0.087701435,
-      "USD": 0.095184741,
-      "SEK": 0.97827275
+      "EUR": 0.085272,
+      "SEK": 0.995781
+    },
+    "currency": {
+      "name": "Norwegian krone",
+      "symbol": "kr",
+      "code": "NOK"
     }
   },
-  // this should be the current time (i.e., the time of retrieval)
-  "lastRetrieval": "20240229 18:15"
+  "lastRetrieval": "2024-04-18T16:37:42.469867+02:00"
 }
 ```
-
-Note: While it would, in principle, be easy to request everything for all registered dashboard configurations
-(i.e., `GET` request on `/dashboards/` endpoint), be mindful of the services we are using. We thus only allow for one
-dashboard retrieval.
 
 ---
 

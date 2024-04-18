@@ -1,5 +1,8 @@
 - Make tests
-- Make firestore emulator run automatically, either in the docker or in the tests
+    - Make coverage report
+
+- Status
+    - Count number of webhooks
 
 - Docker:
     - Make it take the .env file
