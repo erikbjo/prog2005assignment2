@@ -1,16 +1,14 @@
 **/*.iml
 **/.idea
-**/*.json
 **/.git
 **/.secrets
 **/vendor
 *.log
-*.md
 .env
 .deploy
 .dockerignore
 .gitignore
-firebase.json
+firestore_emulator.log
 firebase-debug.log
 firebase-debug.log.json
 firestore-debug.log

@@ -8,6 +8,7 @@ firestore-debug.log
 firestore-debug.log.json
 ui-debug.log
 ui-debug.log.json
+firestore_emulator.log
 
 # Default ignored files
 /shelf/
