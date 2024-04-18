@@ -1,5 +1,6 @@
 .idea
 serviceAccountKey.json
+.firebaserc
 
 firebase.json
 firebase-debug.log
