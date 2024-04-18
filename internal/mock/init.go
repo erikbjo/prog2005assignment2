@@ -15,7 +15,7 @@ func InitForTesting() {
 	createTestHttpServer()
 }
 
-var localhost = "http://localhost:" + utils.GetPort()
+var localhost = "http://localhost:" + utils.GetTestPort()
 
 // setStubsForTesting Use self-hosted stubs for testing
 func setStubsForTesting() {
@@ -25,7 +25,7 @@ func setStubsForTesting() {
 }
 
 func createTestHttpServer() {
-	port := utils.GetPort()
+	port := utils.GetTestPort()
 
 	http.HandleFunc(constants.TestRestCountriesApi, stubs.RestCountriesHandler)
 	http.HandleFunc(constants.TestCurrencyApi, stubs.CurrencyHandler)
