@@ -29,7 +29,9 @@ var registrationsEndpointWithoutID = inhouse.Endpoint{
 	Description: "This endpoint is used to manage registrations.",
 }
 
-// HandlerWithoutID handles the /dashboard/v1/registrations path.
+/*
+HandlerWithoutID handles the /dashboard/v1/registrations path.
+*/
 func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json")
 	// Switch on the HTTP request method
@@ -55,11 +57,10 @@ func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/*
+handleRegistrationsGetRequest handles the GET request for the /dashboard/v1/registrations path.
+*/
 func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
-	// Pseudocode
-	// Get all registrations from the database
-	// Return the registrations
-	// If there is an error, return an error message
 
 	// Get the all dashboard config documents
 	allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
@@ -73,28 +74,34 @@ func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Marshal the status object to JSON
-	marshaled, err3 := json.MarshalIndent(
-		allDocuments,
-		"",
-		"\t",
-	)
-	if err3 != nil {
-		log.Println("Error during JSON encoding: " + err3.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
-		return
-	}
+	if len(allDocuments) > 0 {
+		// Marshal the status object to JSON
+		marshaled, err3 := json.MarshalIndent(
+			allDocuments,
+			"",
+			"\t",
+		)
+		if err3 != nil {
+			log.Println("Error during JSON encoding: " + err3.Error())
+			http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+			return
+		}
 
-	// Write the JSON to the response
-	_, err4 := w.Write(marshaled)
-	if err4 != nil {
-		log.Println("Failed to write response: " + err4.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
-		return
+		// Write the JSON to the response
+		_, err4 := w.Write(marshaled)
+		if err4 != nil {
+			log.Println("Failed to write response: " + err4.Error())
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		http.Error(w, "No documents found", http.StatusNoContent)
 	}
 }
 
-// Returns only the headers for the request to retrieve all dashboards configs
+/*
+handleRegistrationsHeadRequest handles the HEAD request for the /dashboard/v1/registrations path.
+*/
 func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Get all dashboard config documents to get content length
@@ -138,6 +145,9 @@ func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+/*
+handleRegistrationsPostRequest handles the POST request for the /dashboard/v1/registrations path.
+*/
 func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 
 	var content requests.DashboardConfig
