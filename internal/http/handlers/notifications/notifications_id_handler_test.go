@@ -11,10 +11,6 @@ import (
 )
 
 func TestHandlerWithID(t *testing.T) {
-	type args struct {
-		w http.ResponseWriter
-		r *http.Request
-	}
 	tests := []struct {
 		name       string
 		method     string
