@@ -14,15 +14,17 @@ import (
 
 func TestMain(m *testing.M) {
 	// Setup function
-	log.Println("Setup for testing")
+	log.Println("Setup for testing status")
 	mock.InitForTesting()
 
 	// Run tests
 	m.Run()
 
 	// Teardown function
-	log.Println("Teardown for testing")
-	mock.TeardownAfterTesting()
+	defer func() {
+		log.Println("Teardown for testing status")
+		mock.TeardownAfterTesting()
+	}()
 
 }
 
@@ -52,15 +54,13 @@ func TestStatusHandler(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				// Create a mock request
-				req := httptest.NewRequest(tt.method, constants.StatusPath, nil)
+				req := httptest.NewRequest(tt.method, "/", nil)
 
 				// Create a mock response recorder
 				w := httptest.NewRecorder()
 
 				// Call the handler
 				Handler(w, req)
-
-				log.Println(w.Body.String())
 
 				// Check if the status code matches expected
 				if w.Code != tt.statusCode {

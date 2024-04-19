@@ -29,15 +29,18 @@ var jsonTestRegistration, _ = json.Marshal(testRegistration)
 
 func TestMain(m *testing.M) {
 	// Setup function
-	log.Println("Setup for testing")
+	log.Println("Setup for testing registrations")
 	mock.InitForTesting()
 
 	// Run tests
 	m.Run()
 
-	// Teardown function
-	log.Println("Teardown for testing")
-	mock.TeardownAfterTesting()
+	defer func() {
+		// Teardown function
+		log.Println("Teardown for testing registrations")
+		mock.TeardownAfterTesting()
+	}()
+
 }
 
 func TestHandlerWithoutID(t *testing.T) {
