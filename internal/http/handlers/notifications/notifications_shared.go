@@ -22,7 +22,16 @@ func GetEndpointStructs() []inhouse.Endpoint {
 	return []inhouse.Endpoint{notificationsEndpointWithoutID, notificationsEndpointWithID}
 }
 
+/*
+FindNotifications returns all notifications for a specific event without any other conditions.
+*/
 func FindNotifications(event string) ([]requests.Notification, error) {
+	var foundNotifications []requests.Notification
+
+	if !isValidEvent(event) {
+		return nil, fmt.Errorf("invalid event type: %v", event)
+	}
+
 	notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
 	if err != nil {
 		log.Println("Error while trying to receive notification from db: ", err.Error())
@@ -31,17 +40,22 @@ func FindNotifications(event string) ([]requests.Notification, error) {
 
 	for _, notification := range notifications {
 		if notification.Event == event {
-			notifications = append(notifications, notification)
+			foundNotifications = append(foundNotifications, notification)
 		}
 	}
-	return notifications, nil
+	return foundNotifications, nil
 }
 
 /*
-FindNotificationsByCountry returns all notifications for a specific event and country.
+FindNotificationsByCountry returns all notifications for a specific event and country as condition.
 */
 func FindNotificationsByCountry(event string, country string) ([]requests.Notification, error) {
 	var foundNotifications []requests.Notification
+
+	if !isValidEvent(event) {
+		return nil, fmt.Errorf("invalid event type: %v", event)
+	}
+
 	notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
 	if err != nil {
 		log.Println("Error while trying to receive notification from db: ", err.Error())
@@ -49,17 +63,15 @@ func FindNotificationsByCountry(event string, country string) ([]requests.Notifi
 	}
 
 	for _, notification := range notifications {
-		fmt.Printf("notification country: %v\n", notification.Country)
-		fmt.Printf("Given country: %v\n", country)
 		if notification.Event == event && (notification.Country == country || notification.Country == "") {
-			fmt.Printf("inside if\n")
 			foundNotifications = append(foundNotifications, notification)
 		}
 	}
 	return foundNotifications, nil
 }
 
-// InvokeNotification sends a request to the URL of the notification with the content of the notification as the body.
+// InvokeNotification invokes the notification by sending a request to the URL of the notification with the content of
+// the notification as the body.
 func InvokeNotification(notification requests.Notification) {
 	// Update the notification with the current time
 	currentTime := time.Now()

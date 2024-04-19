@@ -92,7 +92,7 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error while decoding json: ", err.Error())
 	}
 
-	// Checks if event in body is valid
+	// Checks if event in body is isValid
 	if isValidEvent(content.Event) == false {
 		http.Error(w, "Invalid event type provided", http.StatusBadRequest)
 		return
@@ -129,7 +129,7 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 /*
-isValidEvent checks if the event is a valid event type.
+isValidEvent checks if the event is a isValid event type.
 */
 func isValidEvent(event string) bool {
 	for _, validEvent := range requests.ImplementedEvents {
