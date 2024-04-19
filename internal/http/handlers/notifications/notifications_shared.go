@@ -98,11 +98,15 @@ func InvokeNotification(notification requests.Notification) {
 	}
 
 	reader := bytes.NewReader(marshaled)
-	r, err3 := http.NewRequest(http.MethodGet, notification.Url, reader)
+	r, err3 := http.NewRequest(http.MethodPost, notification.Url, reader)
 	if err3 != nil {
 		log.Println("Error while creating request: " + err3.Error())
 		return
 	}
+
+	// Sets header
+	r.Header.Set("Content-Type", "application/json")
+
 	_, err4 := utils.Client.Do(r)
 	if err4 != nil {
 		log.Println("Error while sending request: " + err4.Error())
