@@ -67,11 +67,16 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 		firebase.DashboardCollection,
 	)
 	if err2 != nil {
-		http.Error(
-			w,
-			"Error while trying to receive document from db.",
-			http.StatusInternalServerError,
-		)
+		switch err2.Error() {
+		case "no valid ID was provided":
+			http.Error(w, "No valid ID was provided", http.StatusBadRequest)
+		case "document not found in collection":
+			http.Error(w, "Document not found in collection", http.StatusNoContent)
+		default:
+			http.Error(
+				w, "Error while trying to receive document from db.", http.StatusInternalServerError,
+			)
+		}
 		log.Println("Error while trying to receive document from db: ", err2.Error())
 		return
 	}
