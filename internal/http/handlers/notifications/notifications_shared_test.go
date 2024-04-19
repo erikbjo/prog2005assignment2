@@ -50,7 +50,8 @@ func TestFindNotifications(t *testing.T) {
 					return true
 				}() != tt.onlyWantedEventType {
 					t.Errorf(
-						"FindNotifications() found unwanted event type in list = %v, wanted type %v", got,
+						"FindNotifications() found unwanted event type in list = %v, wanted type %v",
+						got,
 						tt.args.event,
 					)
 				}
@@ -128,7 +129,11 @@ func TestFindNotificationsByCountry(t *testing.T) {
 				}
 				// Check if the error is as expected
 				if (err != nil) != tt.wantError {
-					t.Errorf("FindNotificationsByCountry() error = %v, wantErr %v", err, tt.wantError)
+					t.Errorf(
+						"FindNotificationsByCountry() error = %v, wantErr %v",
+						err,
+						tt.wantError,
+					)
 					return
 				}
 			},
@@ -150,7 +155,7 @@ func TestInvokeNotification(t *testing.T) {
 			args: args{
 				notification: requests.Notification{
 					ID:         "testID",
-					Url:        "http://localhost:8888",
+					Url:        "http://localhost:8080",
 					Event:      "REGISTER",
 					Country:    "SE",
 					LastInvoke: &time.Time{},
@@ -165,7 +170,10 @@ func TestInvokeNotification(t *testing.T) {
 				timeBefore := time.Now()
 				*tt.args.notification.LastInvoke = timeBefore
 
-				_ = firebase.AddDocument[requests.Notification](tt.args.notification, firebase.NotificationCollection)
+				_ = firebase.AddDocument[requests.Notification](
+					tt.args.notification,
+					firebase.NotificationCollection,
+				)
 				InvokeNotification(tt.args.notification)
 				timeAfter := tt.args.notification.LastInvoke
 				if (timeAfter != &timeBefore) != tt.wantTimeUpdated {

@@ -37,7 +37,7 @@ func setupDB() {
 
 func TestMain(m *testing.M) {
 	// Setup function
-	log.Println("Setup for testing")
+	log.Println("Setup for testing notifications")
 	mock.InitForTesting()
 
 	setupDB()
@@ -45,9 +45,11 @@ func TestMain(m *testing.M) {
 	// Run tests
 	m.Run()
 
-	// Teardown function
-	log.Println("Teardown for testing")
-	mock.TeardownAfterTesting()
+	defer func() {
+		// Teardown function
+		log.Println("Teardown for testing notifications")
+		mock.TeardownAfterTesting()
+	}()
 }
 
 func TestHandlerWithoutID(t *testing.T) {

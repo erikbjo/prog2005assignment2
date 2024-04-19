@@ -74,20 +74,20 @@ func DefaultHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		}
-	}
+	} else {
+		// Else, return the site map
+		w.Header().Set("content-type", "application/json")
+		marshaledSiteMap, err := json.MarshalIndent(SiteMap, "", "\t")
+		if err != nil {
+			log.Println("Error during JSON encoding: " + err.Error())
+			http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+			return
+		}
 
-	// Else, return the site map
-	w.Header().Set("content-type", "application/json")
-	marshaledSiteMap, err := json.MarshalIndent(SiteMap, "", "\t")
-	if err != nil {
-		log.Println("Error during JSON encoding: " + err.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
-		return
-	}
-
-	_, err = w.Write(marshaledSiteMap)
-	if err != nil {
-		log.Println("Failed to write response: " + err.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		_, err = w.Write(marshaledSiteMap)
+		if err != nil {
+			log.Println("Failed to write response: " + err.Error())
+			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		}
 	}
 }
