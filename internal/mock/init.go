@@ -2,7 +2,7 @@ package mock
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/mock/stubs"
 	"assignment-2/internal/utils"
 	"log"
@@ -13,7 +13,7 @@ import (
 func InitForTesting() {
 	setStubsForTesting()
 	// Initialize Firebase for testing
-	firebase.InitializeForTesting()
+	db.InitializeForTesting()
 	createTestHttpServer()
 }
 

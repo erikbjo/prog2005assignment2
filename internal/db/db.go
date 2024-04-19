@@ -1,9 +1,10 @@
-package firebase
+package db
 
 import (
 	"assignment-2/internal/utils"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"context"                       // State handling across API boundaries; part of native GoLang API
+	"encoding/json"
 	"errors"
 	firebase "firebase.google.com/go" // Generic firebase support
 	"fmt"
@@ -25,7 +26,6 @@ var client *firestore.Client
 
 // Collection names in Firestore
 const (
-	firebaseAuth           = "./serviceAccountKey.json"
 	DashboardCollection    = "dashboards"
 	NotificationCollection = "notifications"
 )
@@ -35,7 +35,21 @@ type dummyStruct struct {
 	ID    string
 }
 
-func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int {
+type serviceAccountKey struct {
+	Type                    string `json:"type"`
+	ProjectID               string `json:"project_id"`
+	PrivateKeyID            string `json:"private_key_id"`
+	PrivateKey              string `json:"private_key"`
+	ClientEmail             string `json:"client_email"`
+	ClientID                string `json:"client_id"`
+	AuthURI                 string `json:"auth_uri"`
+	TokenURI                string `json:"token_uri"`
+	AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"`
+	ClientX509CertURL       string `json:"client_x509_cert_url"`
+	UniverseDomain          string `json:"universe_domain"`
+}
+
+func GetStatusCodeOfCollection(collection string) int {
 	// Check if the Firestore client is initialized
 	if client == nil {
 		// If client is nil, return 503 Service Unavailable status code
@@ -339,21 +353,39 @@ func Initialize() {
 	// Firebase initialization
 	ctx = context.Background()
 
-	// We use a service account, load credentials file that you downloaded from your project's settings menu.
-	// It should reside in your project directory.
-	// Make sure this file is git-ignored, since it is the access token to the database.
-	sa := option.WithCredentialsFile(firebaseAuth)
+	// Define a struct to hold the parsed JSON data
+	key := serviceAccountKey{
+		Type:                    os.Getenv("TYPE"),
+		ProjectID:               os.Getenv("PROJECTID"),
+		PrivateKeyID:            os.Getenv("PRIVATEKEYID"),
+		PrivateKey:              os.Getenv("PRIVATEKEY"),
+		ClientEmail:             os.Getenv("CLIENTEMAIL"),
+		ClientID:                os.Getenv("CLIENTID"),
+		AuthURI:                 os.Getenv("AUTHURI"),
+		TokenURI:                os.Getenv("TOKENURI"),
+		AuthProviderX509CertURL: os.Getenv("AUTHPROVIDERX509CERTURL"),
+		ClientX509CertURL:       os.Getenv("CLIENTX509CERTURL"),
+		UniverseDomain:          os.Getenv("UNIVERSEDOMAIN"),
+	}
+
+	// Marshal the struct into a JSON byte slice
+	jsonKey, err := json.Marshal(key)
+	if err != nil {
+		log.Println("Failed to marshal service account key: ", err)
+		return
+	}
+
+	// Create credentials option from the struct
+	sa := option.WithCredentialsJSON(jsonKey)
+
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
-		log.Println("Failed to create Firebase app: ", err)
+		log.Fatal("Failed to create Firestore app: ", err)
 		return
 	}
 
 	// Instantiate client
 	client, err = app.Firestore(ctx)
-
-	// Alternative setup, directly through Firestore (without initial reference to Firebase); but requires Project ID; useful if multiple projects are used
-	// client, err := firestore.NewClient(ctx, projectID)
 
 	// Check whether there is an error when connecting to Firestore
 	if err != nil {

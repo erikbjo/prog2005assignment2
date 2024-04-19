@@ -2,7 +2,7 @@ package dashboards
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/http/datatransfers/responses"
@@ -42,7 +42,7 @@ var implementedMethods = []string{
 
 // Endpoint for managing dashboards
 var dashboardsEndpoint = inhouse.Endpoint{
-	Path:        constants.DashboardsPath,
+	Path:        constants.DashboardsPath + "{id}",
 	Methods:     implementedMethods,
 	Description: "Endpoint for managing dashboards.",
 }
@@ -79,9 +79,9 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	id, err := utils2.GetIDFromRequest(r)
 
-	dashboardConfig, err := firebase.GetDocument[requests.DashboardConfig](
+	dashboardConfig, err := db.GetDocument[requests.DashboardConfig](
 		id,
-		firebase.DashboardCollection,
+		db.DashboardCollection,
 	)
 	if err != nil {
 		log.Println("Error while trying to display dashboard document: ", err.Error())

@@ -2,7 +2,7 @@ package registrations
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/http/handlers/notifications"
@@ -63,7 +63,7 @@ handleRegistrationsGetRequest handles the GET request for the /dashboard/v1/regi
 func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Get the all dashboard config documents
-	allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
+	allDocuments, err2 := db.GetAllDocuments[requests.DashboardConfig](db.DashboardCollection)
 	if err2 != nil {
 		http.Error(
 			w,
@@ -105,7 +105,7 @@ handleRegistrationsHeadRequest handles the HEAD request for the /dashboard/v1/re
 func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Get all dashboard config documents to get content length
-	allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
+	allDocuments, err2 := db.GetAllDocuments[requests.DashboardConfig](db.DashboardCollection)
 	if err2 != nil {
 		http.Error(
 			w,
@@ -164,13 +164,16 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	content.ID = utils.GenerateRandomID()
 
 	// Save the DashboardConfig to the database
-	err2 := firebase.AddDocument[requests.DashboardConfig](content, firebase.DashboardCollection)
+	err2 := db.AddDocument[requests.DashboardConfig](content, db.DashboardCollection)
 	if err2 != nil {
 		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
 	}
 
 	// Check if any notifications are registered for the event
-	foundNotifications, err3 := notifications.FindNotificationsByCountry(requests.EventRegister, content.IsoCode)
+	foundNotifications, err3 := notifications.FindNotificationsByCountry(
+		requests.EventRegister,
+		content.IsoCode,
+	)
 	if err3 != nil {
 		log.Println("Error while trying to find notifications: ", err3.Error())
 		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)

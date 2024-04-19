@@ -2,7 +2,7 @@ package status
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/utils"
 	"encoding/json"
@@ -74,8 +74,8 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
 		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
 		CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
-		DashboardDB:    firebase.GetStatusCodeOfCollection(w, firebase.DashboardCollection),
-		NotificationDB: firebase.GetStatusCodeOfCollection(w, firebase.NotificationCollection),
+		DashboardDB:    db.GetStatusCodeOfCollection(db.DashboardCollection),
+		NotificationDB: db.GetStatusCodeOfCollection(db.NotificationCollection),
 		Webhooks:       http.StatusNotImplemented,
 		Version:        constants.Version,
 		Uptime:         int(math.Round(time.Since(utils.StartTime).Seconds())),

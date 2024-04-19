@@ -2,7 +2,7 @@ package notifications
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/utils"
@@ -104,7 +104,7 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	content.ID = utils.GenerateRandomID()
 
 	// Save the Notification to the database
-	err2 := firebase.AddDocument[requests.Notification](content, firebase.NotificationCollection)
+	err2 := db.AddDocument[requests.Notification](content, db.NotificationCollection)
 	if err2 != nil {
 		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
 	}
