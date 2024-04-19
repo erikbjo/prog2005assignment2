@@ -1,0 +1,2380 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>api: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">assignment-2/cmd/api/main.go (0.0%)</option>
+				
+				<option value="file1">assignment-2/internal/config/config.go (0.0%)</option>
+				
+				<option value="file2">assignment-2/internal/datasources/firebase/db.go (64.6%)</option>
+				
+				<option value="file3">assignment-2/internal/http/handlers/dashboards/dashboards_handler.go (49.7%)</option>
+				
+				<option value="file4">assignment-2/internal/http/handlers/default_handler.go (0.0%)</option>
+				
+				<option value="file5">assignment-2/internal/http/handlers/notifications/notifications_handler.go (63.0%)</option>
+				
+				<option value="file6">assignment-2/internal/http/handlers/notifications/notifications_id_handler.go (74.3%)</option>
+				
+				<option value="file7">assignment-2/internal/http/handlers/notifications/notifications_shared.go (69.0%)</option>
+				
+				<option value="file8">assignment-2/internal/http/handlers/registrations/registrations_handler.go (59.7%)</option>
+				
+				<option value="file9">assignment-2/internal/http/handlers/registrations/registrations_id_handler.go (77.4%)</option>
+				
+				<option value="file10">assignment-2/internal/http/handlers/registrations/registrations_shared.go (0.0%)</option>
+				
+				<option value="file11">assignment-2/internal/http/handlers/status/status_handler.go (68.0%)</option>
+				
+				<option value="file12">assignment-2/internal/http/server/server.go (0.0%)</option>
+				
+				<option value="file13">assignment-2/internal/mock/init.go (90.9%)</option>
+				
+				<option value="file14">assignment-2/internal/mock/stubs/currency_handler.go (60.0%)</option>
+				
+				<option value="file15">assignment-2/internal/mock/stubs/meteo_handler.go (60.0%)</option>
+				
+				<option value="file16">assignment-2/internal/mock/stubs/rescountries_handler.go (60.0%)</option>
+				
+				<option value="file17">assignment-2/internal/mock/stubs/shared.go (60.0%)</option>
+				
+				<option value="file18">assignment-2/internal/utils/id_utils.go (100.0%)</option>
+				
+				<option value="file19">assignment-2/internal/utils/port_utils.go (50.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Package main is the entry point for the application, it starts the server.
+package main
+
+import (
+        "assignment-2/internal/config"
+        "assignment-2/internal/http/server"
+        "log"
+)
+
+func init() <span class="cov0" title="0">{
+        if err := config.InitConfig(); err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Error loading configuration: %s", err)
+        }</span>
+        <span class="cov0" title="0">log.Println("Configuration loaded successfully")</span>
+}
+
+// main
+// Start the server
+func main() <span class="cov0" title="0">{
+        // Start the server
+        server.Start()
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
+
+import (
+        "github.com/joho/godotenv"
+        "log"
+)
+
+func InitConfig() error <span class="cov0" title="0">{
+        // Load environment variables from .env file
+        err := godotenv.Load(".env")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error loading .env file")
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package firebase
+
+import (
+        "assignment-2/internal/utils"
+        "cloud.google.com/go/firestore" // Firestore-specific support
+        "context"                       // State handling across API boundaries; part of native GoLang API
+        "errors"
+        firebase "firebase.google.com/go" // Generic firebase support
+        "fmt"
+        "google.golang.org/api/iterator"
+        "google.golang.org/api/option"
+        "log"
+        "net/http"
+        "os"
+)
+
+/*
+This server shows an example of how to interact with Firebase directly, including
+storing and retrieval of content.
+*/
+
+// Firebase context and client used by Firestore functions throughout the program.
+var ctx context.Context
+var client *firestore.Client
+
+// Collection names in Firestore
+const (
+        firebaseAuth           = "./serviceAccountKey.json"
+        DashboardCollection    = "dashboards"
+        NotificationCollection = "notifications"
+)
+
+type dummyStruct struct {
+        Dummy string
+        ID    string
+}
+
+func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int <span class="cov8" title="1">{
+        // Check if the Firestore client is initialized
+        if client == nil </span><span class="cov0" title="0">{
+                // If client is nil, return 503 Service Unavailable status code
+                // http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+                log.Println("Firestore client is not initialized")
+                return http.StatusServiceUnavailable
+        }</span>
+
+        // Send a dummy document to the collection to check if the database is available
+        <span class="cov8" title="1">id := utils.GenerateRandomID()
+        err := AddDocument[dummyStruct](
+                dummyStruct{Dummy: "dummy", ID: id},
+                collection,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to add dummy document to the collection: ", err.Error())
+                return http.StatusServiceUnavailable
+        }</span>
+
+        <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
+                err := DeleteDocument(id, collection)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println(
+                                "Error while trying to delete dummy document from the collection: ",
+                                err.Error(),
+                        )
+                }</span>
+        }()
+
+        // Check if the Firestore client is connected by performing a simple query
+        <span class="cov8" title="1">iter := client.Collection(collection).Documents(ctx)
+        defer iter.Stop()
+
+        // Attempt to retrieve the first document
+        _, err = iter.Next()
+        if err != nil </span><span class="cov0" title="0">{
+                // If there's an error connecting to the database, return 503 Service Unavailable status code
+                // http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
+                log.Println(
+                        "Error while trying to retrieve the dummy document from the collection: ",
+                        err.Error(),
+                )
+                return http.StatusServiceUnavailable
+        }</span>
+
+        // If code reaches this point, the database is available
+        <span class="cov8" title="1">return http.StatusOK</span>
+}
+
+/*
+AddDocument Structures data by the provided struct and sends it to Firestore to be registered as a
+document.
+*/
+func AddDocument[T any](
+        data interface{}, collection string,
+) error <span class="cov8" title="1">{
+
+        // Assert type to target struct
+        target, ok := data.(T)
+        if !ok </span><span class="cov0" title="0">{
+                return fmt.Errorf("data does not match target struct")
+        }</span>
+
+        // Add document to Firestore
+        <span class="cov8" title="1">_, _, err := client.Collection(collection).Add(ctx, target)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+/*
+GetDocument Returns the document that matches with the provided ID from a collection
+*/
+func GetDocument[T any](
+        id string,
+        collection string,
+) (T, error) <span class="cov8" title="1">{
+        // interface of document content
+        var data T
+
+        if len(id) != 0 </span><span class="cov8" title="1">{
+
+                // Extract individual document
+                doc, err2 := getDocumentByID(id, collection)
+                if err2 != nil </span><span class="cov8" title="1">{
+                        log.Println("Error extracting body of returned document" + id)
+                        return data, err2
+                }</span>
+
+                <span class="cov8" title="1">if err4 := doc.DataTo(&amp;data); err4 != nil </span><span class="cov0" title="0">{
+                        log.Println("Error unmarshalling document mapOfContent:", err4)
+                        return data, err4
+                }</span>
+                // A document map with string keys
+        } else<span class="cov8" title="1"> {
+                log.Println("No valid ID was provided")
+                return data, fmt.Errorf("no valid ID was provided")
+        }</span>
+        <span class="cov8" title="1">return data, nil</span>
+}
+
+/*
+GetAllDocuments Returns all documents in collection.
+*/
+func GetAllDocuments[T any](collection string) (
+        []T,
+        error,
+) <span class="cov8" title="1">{
+        // interface of document content
+        var allData []T
+
+        // Collective retrieval of documents
+        iter := client.Collection(collection).Documents(
+                ctx,
+        )
+        // Loop through all entries in provided collection
+        for </span><span class="cov8" title="1">{
+                doc, err := iter.Next()
+                if errors.Is(err, iterator.Done) </span><span class="cov8" title="1">{
+                        break</span>
+                }
+                <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                        log.Printf("Failed to iterate: %v", err)
+                        return nil, err
+                }</span>
+
+                <span class="cov8" title="1">var data T
+                if err3 := doc.DataTo(&amp;data); err3 != nil </span><span class="cov0" title="0">{
+                        log.Println("Error unmarshalling document data:", err3)
+                        return nil, err3
+                }</span>
+
+                // Append the document to the slice
+                <span class="cov8" title="1">allData = append(allData, data)</span>
+        }
+        <span class="cov8" title="1">return allData, nil</span>
+}
+
+/*
+UpdateDocument Updates a document with the provided ID, if found.
+*/
+func UpdateDocument[T any](
+        updatedDocument interface{},
+        documentID string,
+        collection string,
+) error <span class="cov8" title="1">{
+        if ok, err := documentExists(ctx, collection, documentID); ok &amp;&amp; err == nil </span><span class="cov8" title="1">{
+
+                // Find document with matching ID
+                foundDocument, err3 := getDocumentByID(documentID, collection)
+                if err3 != nil </span><span class="cov0" title="0">{
+                        log.Println("Error trying to find document with ID: " + documentID)
+                        return err3
+                }</span>
+
+                // Get the firebase ID of the document
+                <span class="cov8" title="1">firebaseID := foundDocument.Ref.ID
+
+                data, ok := updatedDocument.(T)
+                if !ok </span><span class="cov0" title="0">{
+                        return fmt.Errorf("data does not match target struct")
+                }</span>
+
+                // Add element in embedded structure.
+                <span class="cov8" title="1">_, err2 := client.Collection(collection).Doc(firebaseID).Set(ctx, data)
+                if err2 != nil </span><span class="cov0" title="0">{
+                        // Error handling
+                        log.Printf("Error when updating document. Error: %s", err2.Error())
+                        return err2
+                }</span>
+        } else<span class="cov8" title="1"> if !ok &amp;&amp; err == nil </span><span class="cov0" title="0">{
+                log.Printf(
+                        "A document with the provided ID: %s, was not found in the collection: %s.\n",
+                        documentID, collection,
+                )
+        }</span> else<span class="cov8" title="1"> {
+                log.Println("Error while trying to find document: ", err.Error())
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+/*
+DeleteDocument Deletes a document with the provided ID, if found.
+*/
+func DeleteDocument(id string, collection string) error <span class="cov8" title="1">{
+        // Checks if a document with the provided ID exists in the collection
+        if ok, err := documentExists(ctx, collection, id); ok &amp;&amp; err == nil </span><span class="cov8" title="1">{
+                // Find document with matching ID
+                foundDocument, err3 := getDocumentByID(id, collection)
+                if err3 != nil </span><span class="cov0" title="0">{
+                        log.Println("Error trying to find document with ID: " + id)
+                        return err3
+                }</span>
+
+                // Get the firebase ID of the document
+                <span class="cov8" title="1">firebaseID := foundDocument.Ref.ID
+
+                // Delete specified document
+                _, err2 := client.Collection(collection).Doc(firebaseID).Delete(ctx)
+                if err2 != nil </span><span class="cov0" title="0">{
+                        log.Println("Error while deleting document:" + id)
+                        return err2
+                }</span>
+        } else<span class="cov8" title="1"> if !ok &amp;&amp; err == nil </span><span class="cov0" title="0">{
+                log.Printf(
+                        "A document with the provided ID: %s, was not found in the collection: %s.\n",
+                        id, collection,
+                )
+        }</span> else<span class="cov8" title="1"> {
+                log.Println("Error while trying to find document: ", err.Error())
+                return err
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+/*
+documentExists Checks if a document with the provided ID exists in the collection.
+*/
+func documentExists(ctx context.Context, collection, documentID string) (bool, error) <span class="cov8" title="1">{
+        // Query documents based on the "id" field
+        iter := client.Collection(collection).Where("ID", "==", documentID).Documents(ctx)
+
+        // Get the first document from the query iterator
+        _, err := iter.Next()
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, iterator.Done) </span><span class="cov8" title="1">{
+                        return false, fmt.Errorf(
+                                "document with ID %s not found in collection %s",
+                                documentID,
+                                collection,
+                        )
+                }</span>
+                <span class="cov0" title="0">return false, err</span>
+        }
+
+        <span class="cov8" title="1">return true, nil</span>
+}
+
+/*
+getDocumentByID Retrieves a document with the provided ID from the collection.
+*/
+func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot, error) <span class="cov8" title="1">{
+        // Query documents based on the "id" field
+        iter := client.Collection(collection).Where("ID", "==", id).Documents(ctx)
+
+        // Get the first document from the query iterator
+        docSnap, err := iter.Next()
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, iterator.Done) </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("document with ID %s not found in collection %s", id, collection)
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">return docSnap, nil</span>
+}
+
+func InitializeForTesting() <span class="cov8" title="1">{
+        // Set the Firestore emulator host
+        err := os.Setenv(
+                "FIRESTORE_EMULATOR_HOST",
+                "localhost:8080",
+        ) // Default port for Firestore emulator
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to set Firestore emulator host: %v", err)
+        }</span> else<span class="cov8" title="1"> {
+                log.Println("Firestore emulator host set successfully")
+        }</span>
+
+        // Initialize Firestore client
+        <span class="cov8" title="1">ctx = context.Background()
+        app, err := firebase.NewApp(
+                ctx, &amp;firebase.Config{
+                        ProjectID: "prog2005-assignment-2-c2e5c",
+                },
+                option.WithoutAuthentication(),
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to create Firestore app: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">firestoreClient, err := app.Firestore(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to create Firestore client: %v", err)
+        }</span>
+
+        // Assign the client to your package-level variable for Firestore client
+        <span class="cov8" title="1">client = firestoreClient
+
+        log.Println("Firestore client initialized for testing")</span>
+}
+
+/*
+Initialize Initializes the Firestore client.
+*/
+func Initialize() <span class="cov0" title="0">{
+        // Firebase initialization
+        ctx = context.Background()
+
+        // We use a service account, load credentials file that you downloaded from your project's settings menu.
+        // It should reside in your project directory.
+        // Make sure this file is git-ignored, since it is the access token to the database.
+        sa := option.WithCredentialsFile(firebaseAuth)
+        app, err := firebase.NewApp(ctx, nil, sa)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to create Firebase app: ", err)
+                return
+        }</span>
+
+        // Instantiate client
+        <span class="cov0" title="0">client, err = app.Firestore(ctx)
+
+        // Alternative setup, directly through Firestore (without initial reference to Firebase); but requires Project ID; useful if multiple projects are used
+        // client, err := firestore.NewClient(ctx, projectID)
+
+        // Check whether there is an error when connecting to Firestore
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to create Firestore client: ", err)
+                return
+        }</span>
+        <span class="cov0" title="0">log.Println("Firestore client initialized normally")</span>
+}
+
+/*
+Close Closes the Firestore client.
+*/
+func Close() <span class="cov0" title="0">{
+        errClose := client.Close()
+        if errClose != nil </span><span class="cov0" title="0">{
+                log.Fatal("Closing of the Firebase client failed. Error:", errClose)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package dashboards
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/http/datatransfers/responses"
+        utils2 "assignment-2/internal/utils"
+        "dario.cat/mergo"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+        "time"
+)
+
+// dashboard is the struct for the response object
+type dashboard struct {
+        Country       string            `json:"country"`
+        IsoCode       string            `json:"isoCode"`
+        Features      dashboardFeatures `json:"features"`
+        LastRetrieval time.Time         `json:"lastRetrieval"`
+}
+
+// dashboardFeatures is the struct for the features of the dashboard
+type dashboardFeatures struct {
+        Temperature      *float64             `json:"temperature,omitempty"`
+        Precipitation    *float64             `json:"precipitation,omitempty"`
+        Capital          *string              `json:"capital,omitempty"`
+        Coordinates      *inhouse.Coordinates `json:"coordinates,omitempty"`
+        Population       *int                 `json:"population,omitempty"`
+        Area             *float64             `json:"area,omitempty"`
+        TargetCurrencies map[string]float64   `json:"targetCurrencies,omitempty"`
+        Currency         responses.Currency   `json:"currency"`
+}
+
+// Implemented methods for the endpoint
+var implementedMethods = []string{
+        http.MethodGet,
+}
+
+// Endpoint for managing dashboards
+var dashboardsEndpoint = inhouse.Endpoint{
+        Path:        constants.DashboardsPath,
+        Methods:     implementedMethods,
+        Description: "Endpoint for managing dashboards.",
+}
+
+// GetEndpointStructs returns the endpoint struct for the dashboards endpoint.
+func GetEndpointStructs() []inhouse.Endpoint <span class="cov0" title="0">{
+        return []inhouse.Endpoint{dashboardsEndpoint}
+}</span>
+
+// HandlerWithID handles the /dashboard/v1/dashboards path.
+// It currently only supports GET requests
+func HandlerWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Set("content-type", "application/json")
+        // Switch on the HTTP request method
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                handleDashboardsGetRequest(w, r)</span>
+
+        default:<span class="cov8" title="1">
+                // If the method is not implemented, return an error with the allowed methods
+                http.Error(
+                        w, fmt.Sprintf(
+                                "REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
+                                implementedMethods,
+                        ), http.StatusNotImplemented,
+                )
+                return</span>
+        }
+
+}
+
+// handleDashboardsGetRequest handles the GET request for the /dashboard/v1/dashboards path.
+// It is used to retrieve the populated dashboards.
+func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        id, err := utils2.GetIDFromRequest(r)
+
+        dashboardConfig, err := firebase.GetDocument[requests.DashboardConfig](
+                id,
+                firebase.DashboardCollection,
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                log.Println("Error while trying to display dashboard document: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to display dashboard document",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Create the response object and assign the country and iso code
+        <span class="cov0" title="0">var response dashboard
+        response.Country = dashboardConfig.Country
+        response.IsoCode = dashboardConfig.IsoCode
+
+        // Get the features for the dashboard
+        var features dashboardFeatures
+        countryFeatures, err := getCountryData(dashboardConfig.IsoCode)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to get country data: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to get country data.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Merge the features
+        <span class="cov0" title="0">err = mergo.Merge(&amp;features, countryFeatures, mergo.WithOverride, mergo.WithoutDereference)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to merge country features: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to merge country features.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Get the meteo features
+        <span class="cov0" title="0">meteoFeatures, err := getMeteoData(features.Coordinates)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to get meteo data: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to get meteo data.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Merge the features
+        <span class="cov0" title="0">err = mergo.Merge(&amp;features, meteoFeatures, mergo.WithOverride, mergo.WithoutDereference)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to merge meteo features: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to merge meteo features.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Get the currency features
+        <span class="cov0" title="0">currencyFeatures, err := getCurrencyData(
+                dashboardConfig.Features.TargetCurrencies,
+                countryFeatures.Currency,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to get currency rates: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to get currency rates.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Merge the features
+        <span class="cov0" title="0">err = mergo.Merge(&amp;features, currencyFeatures, mergo.WithOverride, mergo.WithoutDereference)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to merge currency features: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to merge currency features.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Assign the features to the response
+        <span class="cov0" title="0">response.Features = features
+        response.LastRetrieval = time.Now()
+
+        // Filter the response by the config
+        filteredResponse, err := filterDashboardByConfig(response, dashboardConfig)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to filter dashboard features: ", err.Error())
+                http.Error(
+                        w,
+                        "Error while trying to filter dashboard features.",
+                        http.StatusInternalServerError,
+                )
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov0" title="0">marshaled, err := json.MarshalIndent(
+                filteredResponse,
+                "",
+                "\t",
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov0" title="0">_, err = w.Write(marshaled)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+// getMeteoData gets the meteo data for the given coordinates.
+// This data includes the mean temperature and precipitation.
+func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) <span class="cov8" title="1">{
+        // Get the weather data from the meteo API
+        r, err1 := http.NewRequest(
+                http.MethodGet,
+                fmt.Sprintf(
+                        "%s?latitude=%f&amp;longitude=%f&amp;hourly=temperature_2m,precipitation&amp;timezone=Europe%%2FBerlin&amp;forecast_days=1",
+                        utils2.CurrentMeteoApi, coordinates.Latitude, coordinates.Longitude,
+                ),
+                nil,
+        )
+        if err1 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in creating request:", err1.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in creating request")
+        }</span>
+
+        <span class="cov8" title="1">r.Header.Add("content-type", "application/json")
+
+        // Issue request
+        res, err2 := utils2.Client.Do(r)
+        if err2 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in response:", err2.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in response")
+        }</span>
+
+        // Decode JSON
+        <span class="cov8" title="1">var meteo responses.MeteoForecastResponse
+        err3 := json.NewDecoder(res.Body).Decode(&amp;meteo)
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in decoding JSON:", err3.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+        }</span>
+
+        // Gets the average of all hourly temperatures and rounds to 5 decimal points
+        <span class="cov8" title="1">averageTemperature := float64(int(average(meteo.Hourly.Temperature2M)*100000)) / 100000
+        averagePrecipitation := float64(int(average(meteo.Hourly.Precipitation)*100000)) / 100000
+
+        features := dashboardFeatures{
+                Temperature:   &amp;averageTemperature,
+                Precipitation: &amp;averagePrecipitation,
+        }
+
+        return features, nil</span>
+}
+
+// getCountryData gets the country data for the given ISO code. This data includes the capital, coordinates, population,
+// area, and currency.
+func getCountryData(isoCode string) (dashboardFeatures, error) <span class="cov8" title="1">{
+        // Get the country data from the restcountries API
+        r, err1 := http.NewRequest(
+                http.MethodGet,
+                utils2.CurrentRestCountriesApi+"alpha/"+isoCode+"?fields=name,cca2,currencies,capital,latlng,area,population",
+                nil,
+        )
+        if err1 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in creating request:", err1.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in creating request")
+        }</span>
+
+        <span class="cov8" title="1">log.Println("Request url: ", r.URL)
+
+        r.Header.Add("content-type", "application/json")
+
+        // Issue request
+        res, err2 := utils2.Client.Do(r)
+        if err2 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in response:", err2.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in response")
+        }</span>
+
+        // Decode JSON
+        <span class="cov8" title="1">var country responses.ResponseFromRestcountries
+        err3 := json.NewDecoder(res.Body).Decode(&amp;country)
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in decoding JSON:", err3.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+        }</span>
+
+        <span class="cov8" title="1">if country.Name.Common == "" </span><span class="cov0" title="0">{
+                log.Println("Country not found")
+                return dashboardFeatures{}, fmt.Errorf("country not found")
+        }</span>
+
+        <span class="cov8" title="1">lat := country.Latlng[0]
+        lng := country.Latlng[1]
+        // Task specifies to take the first capital where multiple capitals are available
+        capital := country.Capital[0]
+        // Same goes for currency
+        var currency responses.Currency
+        for key, value := range country.Currencies </span><span class="cov8" title="1">{
+                currency = value
+                currency.Code = key
+                break</span>
+        }
+
+        <span class="cov8" title="1">features := dashboardFeatures{
+                Capital: &amp;capital,
+                Coordinates: &amp;inhouse.Coordinates{
+                        Latitude:  lat,
+                        Longitude: lng,
+                },
+                Population: &amp;country.Population,
+                Area:       &amp;country.Area,
+                Currency:   currency,
+        }
+
+        return features, nil</span>
+}
+
+// getCurrencyData gets the currency data for the given target currencies. This data includes the exchange rates.
+func getCurrencyData(
+        targetCurrencies []string,
+        exchangeCurrency responses.Currency,
+) (dashboardFeatures, error) <span class="cov8" title="1">{
+        featuresFromCurrency := dashboardFeatures{
+                TargetCurrencies: make(map[string]float64),
+        }
+        // Get the exchange rates from the currency API
+        r, err1 := http.NewRequest(
+                http.MethodGet,
+                fmt.Sprintf(
+                        "%s%s",
+                        utils2.CurrentCurrencyApi, exchangeCurrency.Code,
+                ),
+                nil,
+        )
+        if err1 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in creating request:", err1.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in creating request")
+        }</span>
+
+        <span class="cov8" title="1">r.Header.Add("content-type", "application/json")
+        log.Println("Request: ", r)
+
+        // Issue request
+        res, err2 := utils2.Client.Do(r)
+        if err2 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in response:", err2.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in response")
+        }</span>
+
+        // Decode JSON
+        <span class="cov8" title="1">var response responses.ResponseFromCurrency
+        err3 := json.NewDecoder(res.Body).Decode(&amp;response)
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error in decoding JSON:", err3.Error())
+                return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+        }</span>
+
+        // Get the exchange rates for the target currencies
+        <span class="cov8" title="1">for _, targetCurrency := range targetCurrencies </span><span class="cov8" title="1">{
+                if _, ok := response.Rates[targetCurrency]; !ok </span><span class="cov0" title="0">{
+                        log.Println("Exchange rate not found for currency: ", targetCurrency)
+                        // Not returning error, just setting the rate to 0
+                        featuresFromCurrency.TargetCurrencies["targetCurrency"] = 0
+                }</span> else<span class="cov8" title="1"> {
+                        featuresFromCurrency.TargetCurrencies[targetCurrency] = response.Rates[targetCurrency]
+                }</span>
+        }
+
+        <span class="cov8" title="1">return featuresFromCurrency, nil</span>
+}
+
+// average calculates the mean of a slice of float64 elements.
+func average(elements []float64) float64 <span class="cov8" title="1">{
+        var sum float64
+        if len(elements) == 0 </span><span class="cov0" title="0">{
+                return 0
+        }</span>
+        <span class="cov8" title="1">for _, element := range elements </span><span class="cov8" title="1">{
+                sum += element
+        }</span>
+        <span class="cov8" title="1">return sum / float64(len(elements))</span>
+}
+
+// filterDashboardByConfig filters the dashboard features by the given config.
+func filterDashboardByConfig(oldDashboard dashboard, config requests.DashboardConfig) (
+        dashboard,
+        error,
+) <span class="cov8" title="1">{
+        if config.Country != oldDashboard.Country </span><span class="cov0" title="0">{
+                return dashboard{}, fmt.Errorf("country does not match")
+        }</span>
+        // Returns a new dashboard with the features filtered by the config
+        <span class="cov8" title="1">newDashboard := dashboard{
+                Country:       oldDashboard.Country,
+                IsoCode:       oldDashboard.IsoCode,
+                LastRetrieval: oldDashboard.LastRetrieval,
+        }
+
+        if config.Features.Temperature </span><span class="cov8" title="1">{
+                newDashboard.Features.Temperature = oldDashboard.Features.Temperature
+        }</span>
+        <span class="cov8" title="1">if config.Features.Precipitation </span><span class="cov8" title="1">{
+                newDashboard.Features.Precipitation = oldDashboard.Features.Precipitation
+        }</span>
+        <span class="cov8" title="1">if config.Features.Capital </span><span class="cov8" title="1">{
+                newDashboard.Features.Capital = oldDashboard.Features.Capital
+        }</span>
+        <span class="cov8" title="1">if config.Features.Coordinates </span><span class="cov8" title="1">{
+                newDashboard.Features.Coordinates = oldDashboard.Features.Coordinates
+        }</span>
+        <span class="cov8" title="1">if config.Features.Population </span><span class="cov0" title="0">{
+                newDashboard.Features.Population = oldDashboard.Features.Population
+        }</span>
+        <span class="cov8" title="1">if config.Features.Area </span><span class="cov0" title="0">{
+                newDashboard.Features.Area = oldDashboard.Features.Area
+        }</span>
+
+        // Translocate the target currencies
+        <span class="cov8" title="1">newDashboard.Features.TargetCurrencies = make(map[string]float64)
+        for key, value := range oldDashboard.Features.TargetCurrencies </span><span class="cov0" title="0">{
+                newDashboard.Features.TargetCurrencies[key] = value
+        }</span>
+
+        <span class="cov8" title="1">newDashboard.Features.Currency = oldDashboard.Features.Currency
+
+        return newDashboard, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package handlers
+
+import (
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/handlers/dashboards"
+        "assignment-2/internal/http/handlers/notifications"
+        "assignment-2/internal/http/handlers/registrations"
+        "assignment-2/internal/http/handlers/status"
+        "encoding/json"
+        "github.com/russross/blackfriday"
+        "log"
+        "net/http"
+        "os"
+)
+
+type siteMap struct {
+        Help      string             `json:"help"`
+        Endpoints []inhouse.Endpoint `json:"siteMap"`
+}
+
+// SiteMap
+// Site map for the server. Contains all the endpoints and their descriptions.
+var SiteMap = siteMap{
+        Help: "This is the default handler for the server. " +
+                "Maybe you typed the wrong path or are looking for the web page. " +
+                "Go to '/' to read the README.md file.",
+        Endpoints: []inhouse.Endpoint{},
+}
+
+// Init
+// Initializes the site map with all the endpoints from the different handlers.
+func Init() <span class="cov0" title="0">{
+        endpointsFromRegistrations := registrations.GetEndpointStructs()
+        endpointsFromDashboards := dashboards.GetEndpointStructs()
+        endpointsFromNotifications := notifications.GetEndpointStructs()
+        endpointsFromStatus := status.GetEndpointStructs()
+
+        SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromRegistrations...)
+        SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromDashboards...)
+        SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromNotifications...)
+        SiteMap.Endpoints = append(SiteMap.Endpoints, endpointsFromStatus...)
+}</span>
+
+// DefaultHandler
+// Default handler for the server. Redirects to the web page.
+func DefaultHandler(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        // If the request is for the root path, redirect to the web page
+        if r.URL.Path == "/" </span><span class="cov0" title="0">{
+                // Read the contents of the README.md file
+                readme, err := os.ReadFile("README.md")
+                if err != nil </span><span class="cov0" title="0">{
+                        http.Error(w, "Failed to read README.md", http.StatusInternalServerError)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">html := blackfriday.MarkdownCommon(readme)
+
+                // Set the Content-Type header to indicate that this is HTML
+                w.Header().Set("Content-Type", "text/html")
+
+                // Custom styles for the HTML to make it look better
+                customStyles := `
+            &lt;style&gt;
+                pre {background-color: #f4f4f4;}
+                                body {padding: 10px;}
+            &lt;/style&gt;
+        `
+
+                // Append the custom styles to the HTML
+                htmlWithStyles := append([]byte(customStyles), html...)
+
+                // Write the HTML response
+                _, err = w.Write(htmlWithStyles)
+                if err != nil </span><span class="cov0" title="0">{
+                        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                // Else, return the site map
+                w.Header().Set("content-type", "application/json")
+                marshaledSiteMap, err := json.MarshalIndent(SiteMap, "", "\t")
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error during JSON encoding: " + err.Error())
+                        http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                        return
+                }</span>
+
+                <span class="cov0" title="0">_, err = w.Write(marshaledSiteMap)
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Failed to write response: " + err.Error())
+                        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                }</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package notifications
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/utils"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+)
+
+// Implemented methods for the endpoint
+var implementedMethodsWithoutID = []string{
+        http.MethodGet,
+        http.MethodPost,
+}
+
+// Endpoint for managing webhooks for event notifications.
+var notificationsEndpointWithoutID = inhouse.Endpoint{
+        Path:        constants.NotificationsPath,
+        Methods:     implementedMethodsWithoutID,
+        Description: "Endpoint for managing webhooks for event notifications.",
+}
+
+// HandlerWithoutID handles the /notifications path.
+// It currently supports GET, POST and DELETE requests.
+// Endpoint for managing webhooks for event notifications.
+func HandlerWithoutID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Set("content-type", "application/json")
+        // Switch on the HTTP request method
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                handleNotificationsGetRequest(w, r)</span>
+        case http.MethodPost:<span class="cov0" title="0">
+                handleNotificationsPostRequest(w, r)</span>
+
+        default:<span class="cov8" title="1">
+                // If the method is not implemented, return an error with the allowed methods
+                http.Error(
+                        w, fmt.Sprintf(
+                                "REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
+                                implementedMethodsWithoutID,
+                        ), http.StatusNotImplemented,
+                )
+                return</span>
+        }
+
+}
+
+func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        // Get the all notification documents
+        allDocuments, err2 := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+        if err2 != nil </span><span class="cov0" title="0">{
+                http.Error(
+                        w,
+                        "Error while trying to receive document from db.",
+                        http.StatusInternalServerError,
+                )
+                log.Println("Error while trying to receive document from db: ", err2.Error())
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
+                allDocuments,
+                "",
+                "\t",
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err3.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err4.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var content requests.Notification
+
+        decoder := json.NewDecoder(r.Body)
+        if err := decoder.Decode(&amp;content); err != nil </span><span class="cov8" title="1">{
+                log.Println("Error while decoding json: ", err.Error())
+        }</span>
+
+        // Checks if event in body is isValid
+        <span class="cov8" title="1">if isValidEvent(content.Event) == false </span><span class="cov8" title="1">{
+                http.Error(w, "Invalid event type provided", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">content.ID = utils.GenerateRandomID()
+
+        // Save the Notification to the database
+        err2 := firebase.AddDocument[requests.Notification](content, firebase.NotificationCollection)
+        if err2 != nil </span><span class="cov0" title="0">{
+                http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+        }</span>
+
+        // Return the ID of the saved Notification
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
+                notificationResponse{Id: content.ID},
+                "",
+                "\t",
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err3.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err4.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+/*
+isValidEvent checks if the event is a isValid event type.
+*/
+func isValidEvent(event string) bool <span class="cov8" title="1">{
+        for _, validEvent := range requests.ImplementedEvents </span><span class="cov8" title="1">{
+                if event == validEvent </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package notifications
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/utils"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+)
+
+// Implemented methods for the endpoint with ID
+var implementedMethodsWithID = []string{
+        http.MethodGet,
+        http.MethodDelete,
+}
+
+// Endpoint for managing notifications with a specific ID
+var notificationsEndpointWithID = inhouse.Endpoint{
+        Path:        constants.NotificationsPath + "{id}",
+        Methods:     implementedMethodsWithID,
+        Description: "This endpoint is used to manage notifications with a specific ID.",
+}
+
+// HandlerWithID handles the /notifications/{id} path.
+func HandlerWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Set("content-type", "application/json")
+
+        // Switch on the HTTP request method
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                handleNotificationsGetRequestWithID(w, r)</span>
+        case http.MethodDelete:<span class="cov0" title="0">
+                handleNotificationsDeleteRequestWithID(w, r)</span>
+
+        default:<span class="cov8" title="1">
+                // If the method is not implemented, return an error with the allowed methods
+                http.Error(
+                        w, fmt.Sprintf(
+                                "REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
+                                implementedMethodsWithID,
+                        ), http.StatusNotImplemented,
+                )
+                return</span>
+        }
+}
+
+func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        id, err := utils.GetIDFromRequest(r)
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">log.Printf("Received request to get notification with ID %s\n", id)
+
+        // Get the notification with the provided ID
+        notification, err2 := firebase.GetDocument[requests.Notification](
+                id,
+                firebase.NotificationCollection,
+        )
+        if err2 != nil </span><span class="cov8" title="1">{
+                http.Error(
+                        w,
+                        "Error while trying to receive document from db.",
+                        http.StatusInternalServerError,
+                )
+                log.Println("Error while trying to receive document from db: ", err2.Error())
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
+                notification,
+                "",
+                "\t",
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err3.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err4.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+func handleNotificationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        id, err := utils.GetIDFromRequest(r)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">log.Println("Received request to delete notification with ID ", id)
+
+        err2 := firebase.DeleteDocument(id, firebase.NotificationCollection)
+        if err2 != nil </span><span class="cov8" title="1">{
+                http.Error(w, err2.Error(), http.StatusInternalServerError)
+                return
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package notifications
+
+import (
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/utils"
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+        "time"
+)
+
+type notificationResponse struct {
+        Id string `json:"id"`
+}
+
+// GetEndpointStructs returns the endpoints for the registrations handler. One with an ID and one without.
+func GetEndpointStructs() []inhouse.Endpoint <span class="cov0" title="0">{
+        return []inhouse.Endpoint{notificationsEndpointWithoutID, notificationsEndpointWithID}
+}</span>
+
+/*
+FindNotifications returns all notifications for a specific event without any other conditions.
+*/
+func FindNotifications(event string) ([]requests.Notification, error) <span class="cov8" title="1">{
+        var foundNotifications []requests.Notification
+
+        if !isValidEvent(event) </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid event type: %v", event)
+        }</span>
+
+        <span class="cov8" title="1">notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to receive notification from db: ", err.Error())
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">for _, notification := range notifications </span><span class="cov8" title="1">{
+                if notification.Event == event </span><span class="cov8" title="1">{
+                        foundNotifications = append(foundNotifications, notification)
+                }</span>
+        }
+        <span class="cov8" title="1">return foundNotifications, nil</span>
+}
+
+/*
+FindNotificationsByCountry returns all notifications for a specific event and country as condition.
+*/
+func FindNotificationsByCountry(event string, country string) ([]requests.Notification, error) <span class="cov8" title="1">{
+        var foundNotifications []requests.Notification
+
+        if !isValidEvent(event) </span><span class="cov8" title="1">{
+                return nil, fmt.Errorf("invalid event type: %v", event)
+        }</span>
+
+        <span class="cov8" title="1">notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to receive notification from db: ", err.Error())
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">for _, notification := range notifications </span><span class="cov8" title="1">{
+                if notification.Event == event &amp;&amp; (notification.Country == country || notification.Country == "") </span><span class="cov8" title="1">{
+                        foundNotifications = append(foundNotifications, notification)
+                }</span>
+        }
+        <span class="cov8" title="1">return foundNotifications, nil</span>
+}
+
+// InvokeNotification invokes the notification by sending a request to the URL of the notification with the content of
+// the notification as the body.
+func InvokeNotification(notification requests.Notification) <span class="cov8" title="1">{
+        // Update the notification with the current time
+        currentTime := time.Now()
+        notification.LastInvoke = &amp;currentTime
+
+        err := firebase.UpdateDocument[requests.Notification](
+                notification, notification.ID,
+                firebase.NotificationCollection,
+        )
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error while updating document: " + err.Error())
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err2 := json.MarshalIndent(
+                notification,
+                "",
+                "\t",
+        )
+        if err2 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON marshaling: " + err2.Error())
+                return
+        }</span>
+
+        <span class="cov8" title="1">reader := bytes.NewReader(marshaled)
+        r, err3 := http.NewRequest(http.MethodGet, notification.Url, reader)
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error while creating request: " + err3.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">_, err4 := utils.Client.Do(r)
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Error while sending request: " + err4.Error())
+                return
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package registrations
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/http/handlers/notifications"
+        "assignment-2/internal/utils"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+        "strconv"
+        "time"
+)
+
+// Implemented methods for the endpoint without ID
+var implementedMethodsWithoutID = []string{
+        http.MethodGet,
+        http.MethodHead,
+        http.MethodPost,
+}
+
+// Endpoint for managing registrations without a specific ID
+var registrationsEndpointWithoutID = inhouse.Endpoint{
+        Path:        constants.RegistrationsPath,
+        Methods:     implementedMethodsWithoutID,
+        Description: "This endpoint is used to manage registrations.",
+}
+
+// HandlerWithoutID handles the /dashboard/v1/registrations path.
+func HandlerWithoutID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Set("content-type", "application/json")
+        // Switch on the HTTP request method
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                handleRegistrationsGetRequest(w, r)</span>
+        case http.MethodHead:<span class="cov0" title="0">
+                // Advanced Task: Implement the HEAD method functionality (only return the header, not the body).
+                handleRegistrationsHeadRequest(w, r)</span>
+        case http.MethodPost:<span class="cov0" title="0">
+                handleRegistrationsPostRequest(w, r)</span>
+
+        default:<span class="cov8" title="1">
+                // If the method is not implemented, return an error with the allowed methods
+                http.Error(
+                        w, fmt.Sprintf(
+                                "REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
+                                implementedMethodsWithoutID,
+                        ), http.StatusNotImplemented,
+                )
+                return</span>
+        }
+
+}
+
+func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        // Pseudocode
+        // Get all registrations from the database
+        // Return the registrations
+        // If there is an error, return an error message
+
+        // Get the all dashboard config documents
+        allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
+        if err2 != nil </span><span class="cov0" title="0">{
+                http.Error(
+                        w,
+                        "Error while trying to receive document from db.",
+                        http.StatusInternalServerError,
+                )
+                log.Println("Error while trying to receive document from db: ", err2.Error())
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
+                allDocuments,
+                "",
+                "\t",
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err3.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err4.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+// Returns only the headers for the request to retrieve all dashboards configs
+func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+
+        // Get all dashboard config documents to get content length
+        allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
+        if err2 != nil </span><span class="cov0" title="0">{
+                http.Error(
+                        w,
+                        "Error while trying to receive document from db.",
+                        http.StatusInternalServerError,
+                )
+                log.Println("Error while trying to receive document from db: ", err2.Error())
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
+                allDocuments,
+                "",
+                "\t",
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err3.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Set response headers
+        <span class="cov8" title="1">headers := map[string]string{
+                "Date":           time.Now().Format(time.RFC1123),
+                "Content-Type":   r.Header.Get("Content-Type"),
+                "Connection":     r.Header.Get("Connection"),
+                "Content-Length": strconv.Itoa(len(marshaled)),
+        }
+
+        fmt.Println(headers)
+        // Set response headers
+        for key, value := range headers </span><span class="cov8" title="1">{
+                w.Header().Set(key, value)
+        }</span>
+
+        <span class="cov8" title="1">w.WriteHeader(http.StatusOK)</span>
+}
+
+func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+
+        var content requests.DashboardConfig
+
+        decoder := json.NewDecoder(r.Body)
+        err := decoder.Decode(&amp;content)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Println("Error while decoding json: ", err.Error())
+                http.Error(w, "Error while decoding json.", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">content.LastChange = time.Now()
+        content.ID = utils.GenerateRandomID()
+
+        // Save the DashboardConfig to the database
+        err2 := firebase.AddDocument[requests.DashboardConfig](content, firebase.DashboardCollection)
+        if err2 != nil </span><span class="cov0" title="0">{
+                http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+        }</span>
+
+        // Check if any notifications are registered for the event
+        <span class="cov8" title="1">foundNotifications, err3 := notifications.FindNotificationsByCountry(requests.EventRegister, content.IsoCode)
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error while trying to find notifications: ", err3.Error())
+                http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // If found, invoke the notifications
+        <span class="cov8" title="1">if len(foundNotifications) &gt; 0 </span><span class="cov8" title="1">{
+                for _, n := range foundNotifications </span><span class="cov8" title="1">{
+                        notifications.InvokeNotification(n)
+                }</span>
+        }
+
+        <span class="cov8" title="1">marshaled, err4 := json.MarshalIndent(
+                registrationResponse{ID: content.ID, LastChange: content.LastChange},
+                "",
+                "\t",
+        )
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err4.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err5 := w.Write(marshaled)
+        if err5 != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err5.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package registrations
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/utils"
+        "encoding/json"
+        "fmt"
+        "log"
+        "net/http"
+        "time"
+)
+
+// Implemented methods for the endpoint with ID
+var implementedMethodsWithID = []string{
+        http.MethodGet,
+        http.MethodPut,
+        http.MethodDelete,
+}
+
+// Endpoint for managing registrations with a specific ID
+var registrationsEndpointWithID = inhouse.Endpoint{
+        Path:        constants.RegistrationsPath + "{id}",
+        Methods:     implementedMethodsWithID,
+        Description: "This endpoint is used to manage registrations with a specific ID.",
+}
+
+// HandlerWithID handles the /registrations/v1/registrations/{id} path.
+func HandlerWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Set("content-type", "application/json")
+        // Switch on the HTTP request method
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                handleRegistrationsGetRequestWithID(w, r)</span>
+        case http.MethodPut:<span class="cov0" title="0">
+                handleRegistrationsPutRequestWithID(w, r)</span>
+        case http.MethodDelete:<span class="cov0" title="0">
+                handleRegistrationsDeleteRequestWithID(w, r)</span>
+
+        default:<span class="cov8" title="1">
+                // If the method is not implemented, return an error with the allowed methods
+                http.Error(
+                        w, fmt.Sprintf(
+                                "REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
+                                implementedMethodsWithID,
+                        ), http.StatusNotImplemented,
+                )
+                return</span>
+        }
+
+}
+
+func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        id, err := utils.GetIDFromRequest(r)
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">log.Printf("Received request to get registration with ID %s\n", id)
+
+        // Get the registration with the provided ID
+        dashboard, err2 := firebase.GetDocument[requests.DashboardConfig](
+                id,
+                firebase.DashboardCollection,
+        )
+        if err2 != nil </span><span class="cov8" title="1">{
+                http.Error(
+                        w,
+                        "Error while trying to receive document from db.",
+                        http.StatusInternalServerError,
+                )
+                log.Println("Error while trying to receive document from db: ", err2.Error())
+                return
+        }</span>
+
+        // Marshal the status object to JSON
+        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
+                dashboard,
+                "",
+                "\t",
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err3.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err4.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var update requests.DashboardConfig
+
+        id, err := utils.GetIDFromRequest(r)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">decoder := json.NewDecoder(r.Body)
+        if err := decoder.Decode(&amp;update); err != nil </span><span class="cov8" title="1">{
+                log.Println("Error while decoding json: ", err.Error())
+                http.Error(w, "Error while decoding json.", http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">update.ID = id
+        update.LastChange = time.Now()
+
+        log.Println("Received request to update registration with ID ", id)
+
+        err3 := firebase.UpdateDocument[requests.DashboardConfig](
+                update, id,
+                firebase.DashboardCollection,
+        )
+        if err3 != nil </span><span class="cov8" title="1">{
+                http.Error(w, err3.Error(), http.StatusInternalServerError)
+        }</span>
+        <span class="cov8" title="1">log.Println("Successfully updated registration with ID:", id)</span>
+}
+
+func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        id, err := utils.GetIDFromRequest(r)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">log.Println("Received request to delete registration with ID ", id)
+
+        err2 := firebase.DeleteDocument(id, firebase.DashboardCollection)
+        if err2 != nil </span><span class="cov8" title="1">{
+                http.Error(w, err2.Error(), http.StatusInternalServerError)
+                return
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package registrations
+
+import (
+        `assignment-2/internal/http/datatransfers/inhouse`
+        `assignment-2/internal/http/datatransfers/requests`
+        "encoding/json"
+        "fmt"
+        "io"
+        "log"
+        "net/http"
+        "time"
+)
+
+type registrationResponse struct {
+        ID         string    `json:"id"`
+        LastChange time.Time `json:"lastChange"`
+}
+
+// GetEndpointStructs returns the endpoints for the registrations handler. One with an ID and one without.
+func GetEndpointStructs() []inhouse.Endpoint <span class="cov0" title="0">{
+        return []inhouse.Endpoint{registrationsEndpointWithoutID, registrationsEndpointWithID}
+}</span>
+
+func checkValidityOfResponseBody(w http.ResponseWriter, r *http.Request) (
+        bool,
+        error,
+) <span class="cov0" title="0">{
+        var dashboardConfig requests.DashboardConfig
+        var copyOfBody = r.Body
+
+        // Read and parse the body
+        body, err := io.ReadAll(copyOfBody)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error reading request body: ", err)
+                // Note: We don't return the error here because we want to return a generic error message
+                return false, fmt.Errorf("error reading request body")
+        }</span>
+
+        <span class="cov0" title="0">if len(body) == 0 </span><span class="cov0" title="0">{
+                log.Println("Empty request body")
+                return false, fmt.Errorf("empty request body")
+        }</span>
+
+        // Decode the body into a DashboardConfig struct
+        <span class="cov0" title="0">err = json.Unmarshal(body, &amp;dashboardConfig)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error decoding request body: ", err)
+                return false, fmt.Errorf("error decoding request body")
+        }</span>
+
+        // Additional checks can be added here to validate the body
+
+        <span class="cov0" title="0">return true, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package status
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/datatransfers/inhouse"
+        "assignment-2/internal/utils"
+        "encoding/json"
+        "fmt"
+        "log"
+        "math"
+        "net/http"
+        "time"
+)
+
+// A Status struct to hold the status of the server, including the status of the APIs and the version
+// of the server.
+type status struct {
+        CountriesAPI   int    `json:"countries_api"`
+        MeteoAPI       int    `json:"meteo_api"`
+        CurrencyAPI    int    `json:"currency_api"`
+        DashboardDB    int    `json:"dashboard_db"`
+        NotificationDB int    `json:"notification_db"`
+        Webhooks       int    `json:"webhooks"`
+        Version        string `json:"version"`
+        Uptime         int    `json:"uptime"`
+}
+
+// implementedMethods is a list of the implemented HTTP methods for the status endpoint.
+var implementedMethods = []string{http.MethodGet}
+
+// statusEndpoint is the endpoint for checking the status of the server and the APIs it relies on.
+var statusEndpoint = inhouse.Endpoint{
+        Path:        constants.StatusPath,
+        Methods:     implementedMethods,
+        Description: "Endpoint for checking the status of the server and the APIs it relies on.",
+}
+
+// GetEndpointStructs returns the endpoint for the status handler.
+func GetEndpointStructs() []inhouse.Endpoint <span class="cov0" title="0">{
+        return []inhouse.Endpoint{statusEndpoint}
+}</span>
+
+// Handler
+// Status handler for the server. Returns the status of the server and the APIs it relies on.
+// Currently only supports GET requests.
+func Handler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        w.Header().Set("content-type", "application/json")
+        // Switch on the HTTP request method
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                handleStatusGetRequest(w, r)</span>
+
+        default:<span class="cov8" title="1">
+                // If the method is not implemented, return an error with the allowed methods
+                http.Error(
+                        w, fmt.Sprintf(
+                                "REST Method '%s' not supported. Currently only '%v' are supported.", r.Method,
+                                implementedMethods,
+                        ), http.StatusNotImplemented,
+                )
+                return</span>
+        }
+
+}
+
+// handleStatusGetRequest handles the GET request for the /status path.
+// It returns the status of the server and the APIs it relies on.
+func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        // Create a new status object
+        // TODO: Implement the Webhooks
+        // TODO: Implement firebase testing/mocking
+        currentStatus := status{
+                CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
+                MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
+                CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
+                DashboardDB:    firebase.GetStatusCodeOfCollection(w, firebase.DashboardCollection),
+                NotificationDB: firebase.GetStatusCodeOfCollection(w, firebase.NotificationCollection),
+                Webhooks:       http.StatusNotImplemented,
+                Version:        constants.Version,
+                Uptime:         int(math.Round(time.Since(utils.StartTime).Seconds())),
+        }
+
+        // Marshal the status object to JSON
+        marshaledStatus, err := json.MarshalIndent(currentStatus, "", "\t")
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Error during JSON encoding: " + err.Error())
+                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                return
+        }</span>
+
+        // Write the JSON to the response
+        <span class="cov8" title="1">_, err = w.Write(marshaledStatus)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to write response: " + err.Error())
+                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                return
+        }</span>
+}
+
+// getStatusCode returns the status code of the given URL.
+// If the URL is not reachable, it returns 503.
+func getStatusCode(url string, w http.ResponseWriter) int <span class="cov8" title="1">{
+        switch url </span>{
+        case utils.CurrentRestCountriesApi:<span class="cov8" title="1">
+                url = url + "all"</span>
+        case utils.CurrentCurrencyApi:<span class="cov8" title="1">
+                url = url + "nok"</span>
+        case utils.CurrentMeteoApi:<span class="cov8" title="1">
+                url = url + "?latitude=60.7957&amp;longitude=10.6915"</span>
+        }
+
+        // Send a GET request to the URL
+        <span class="cov8" title="1">resp, err := utils.Client.Get(url)
+        if err != nil </span><span class="cov0" title="0">{
+                // If there is an error, return 503
+                return http.StatusServiceUnavailable
+        }</span>
+
+        // Return the status code
+        <span class="cov8" title="1">return resp.StatusCode</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package server
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/http/handlers"
+        "assignment-2/internal/http/handlers/dashboards"
+        "assignment-2/internal/http/handlers/notifications"
+        "assignment-2/internal/http/handlers/registrations"
+        "assignment-2/internal/http/handlers/status"
+        "assignment-2/internal/utils"
+        "log"
+        "net/http"
+)
+
+// Start
+/*
+Start the server on the port specified in the environment variable PORT. If PORT is not set, the default port 8080 is used.
+*/
+func Start() <span class="cov0" title="0">{
+        // Initialization of firebase database
+        firebase.Initialize()
+
+        // Firebase client closes at the end of this function
+        defer firebase.Close()
+
+        // Get the port from the environment variable, or use the default port
+        port := utils.GetPort()
+
+        // Using mux to handle /'s and parameters
+        mux := http.NewServeMux()
+
+        // Initialize the site map
+        handlers.Init()
+
+        // Set up handler endpoints, with and without trailing slash
+        // Status
+        mux.HandleFunc(constants.StatusPath, status.Handler)
+        mux.HandleFunc(constants.StatusPath[:len(constants.StatusPath)-1], status.Handler)
+
+        // Registrations
+        mux.HandleFunc(constants.RegistrationsPath, registrations.HandlerWithoutID)
+        mux.HandleFunc(
+                constants.RegistrationsPath[:len(constants.RegistrationsPath)-1],
+                registrations.HandlerWithoutID,
+        )
+
+        // Registrations with ID
+        mux.HandleFunc(constants.RegistrationsPath+"{id}", registrations.HandlerWithID)
+
+        // Dashboards
+        mux.HandleFunc(constants.DashboardsPath+"{id}", dashboards.HandlerWithID)
+
+        // Notifications
+        mux.HandleFunc(constants.NotificationsPath, notifications.HandlerWithoutID)
+        mux.HandleFunc(
+                constants.NotificationsPath[:len(constants.NotificationsPath)-1],
+                notifications.HandlerWithoutID,
+        )
+
+        // Notifications with ID
+        mux.HandleFunc(constants.NotificationsPath+"{id}", notifications.HandlerWithID)
+
+        fs := http.FileServer(http.Dir("web"))
+        mux.Handle("/web/", http.StripPrefix("/web/", fs))
+
+        // Default, redirect to /web/
+        mux.HandleFunc("/", handlers.DefaultHandler)
+
+        // Start server
+        log.Println("Starting server on port " + port + " ...")
+        log.Fatal(http.ListenAndServe(":"+port, mux))
+}</span>
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package mock
+
+import (
+        "assignment-2/internal/constants"
+        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/mock/stubs"
+        "assignment-2/internal/utils"
+        "log"
+        "net/http"
+        "time"
+)
+
+func InitForTesting() <span class="cov8" title="1">{
+        setStubsForTesting()
+        // Initialize Firebase for testing
+        firebase.InitializeForTesting()
+        createTestHttpServer()
+}</span>
+
+var localhost = "http://localhost:" + utils.GetTestPort()
+var server http.Server
+
+// setStubsForTesting Use self-hosted stubs for testing
+func setStubsForTesting() <span class="cov8" title="1">{
+        utils.CurrentRestCountriesApi = localhost + constants.TestRestCountriesApi
+        utils.CurrentCurrencyApi = localhost + constants.TestCurrencyApi
+        utils.CurrentMeteoApi = localhost + constants.TestMeteoApi
+}</span>
+
+func createTestHttpServer() <span class="cov8" title="1">{
+        if server.Addr == "" </span><span class="cov8" title="1">{
+                port := utils.GetTestPort()
+                server := http.Server{Addr: ":" + port}
+
+                http.HandleFunc(constants.TestRestCountriesApi, stubs.RestCountriesHandler)
+                http.HandleFunc(constants.TestCurrencyApi, stubs.CurrencyHandler)
+                http.HandleFunc(constants.TestMeteoApi, stubs.MeteoHandler)
+
+                go func() </span><span class="cov8" title="1">{
+                        // If 8001 is in use, sleep for 1 second and try again
+                        // This is to avoid the error "listen tcp :8001: bind: address already in use"
+                        // when running multiple tests
+                        // Hideous
+                        err := server.ListenAndServe()
+                        if err != nil </span><span class="cov8" title="1">{
+                                if err.Error() == "listen tcp :8001: bind: address already in use" </span><span class="cov8" title="1">{
+                                        log.Println("Port 8001 is in use, sleeping for 2 seconds and trying again")
+                                        time.Sleep(2 * time.Second)
+                                        err = server.ListenAndServe()
+                                        if err != nil </span><span class="cov0" title="0">{
+                                                log.Fatalf("Failed to start http server: %v", err)
+                                        }</span>
+                                } else<span class="cov0" title="0"> {
+                                        log.Fatalf("Failed to start http server: %v", err)
+                                }</span>
+                        }
+                }()
+        }
+}
+
+func TeardownAfterTesting() {<span class="cov0" title="0">
+        // cmd := exec.Command(
+        //         "curl",
+        //         "-v",
+        //         "-X",
+        //         "DELETE",
+        //         "http://localhost:8888/emulator/v1/projects/prog2005-assignment-2-c2e5c/databases/(" +
+        //        "default)/documents",
+        // )
+        // if err := cmd.Run(); err != nil {
+        //         log.Fatalf("Failed to stop Firestore emulator: %v", err)
+        // }
+
+        // Close http server
+        // err := server.Close()
+        // if err != nil {
+        //         log.Fatalf("Failed to shutdown http server: %v", err)
+        // }
+
+        // // Clean up any resources after all tests have been executed
+        // firebase.Close()
+        //
+        // // firebase emulators:stop
+        // cmd := exec.Command("firebase", "emulators:stop")
+        // if err := cmd.Run(); err != nil {
+        //         log.Fatalf("Failed to stop Firestore emulator: %v", err)
+        // }
+        // os.Exit(0)
+}</span>
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package stubs
+
+import (
+        "fmt"
+        "log"
+        "net/http"
+)
+
+func CurrencyHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                w.Header().Add("content-type", "application/json")
+                output := ParseFile("../../../mock/resources/currency_nok.json")
+
+                _, err := fmt.Fprint(w, string(output))
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error while trying to display the Currency API stub: ", err.Error())
+                        http.Error(
+                                w,
+                                "Error while trying to display the Currency API stub.",
+                                http.StatusInternalServerError,
+                        )
+                        return
+                }</span>
+                <span class="cov8" title="1">break</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not supported", http.StatusNotImplemented)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package stubs
+
+import (
+        "fmt"
+        "log"
+        "net/http"
+)
+
+func MeteoHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                w.Header().Add("content-type", "application/json")
+                output := ParseFile("../../../mock/resources/meteo_norway.json")
+
+                _, err := fmt.Fprint(w, string(output))
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error while trying to display the Meteo API stub: ", err.Error())
+                        http.Error(
+                                w,
+                                "Error while trying to display the Meteo API stub.",
+                                http.StatusInternalServerError,
+                        )
+                        return
+                }</span>
+                <span class="cov8" title="1">break</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not supported", http.StatusNotImplemented)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package stubs
+
+import (
+        "fmt"
+        "log"
+        "net/http"
+)
+
+func RestCountriesHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        switch r.Method </span>{
+        case http.MethodGet:<span class="cov8" title="1">
+                // cwd, err := os.Getwd()
+                // if err != nil {
+                //         fmt.Println("Error:", err)
+                //         return
+                // }
+
+                // Print the current working directory
+                // fmt.Println("Current working directory:", cwd)
+
+                w.Header().Add("content-type", "application/json")
+                // Hideous way to get the path to the mock resources, but it works for now
+                output := ParseFile("../../../mock/resources/restcountries_no.json")
+
+                _, err := fmt.Fprint(w, string(output))
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error while trying to display the Restcountries API stub: ", err.Error())
+                        http.Error(
+                                w,
+                                "Error while trying to display the Restcountries API stub.",
+                                http.StatusInternalServerError,
+                        )
+                        return
+                }</span>
+                <span class="cov8" title="1">break</span>
+        default:<span class="cov0" title="0">
+                http.Error(w, "Method not supported", http.StatusNotImplemented)</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package stubs
+
+import (
+        "fmt"
+        "os"
+)
+
+// ParseFile reads a file and returns its content as a byte slice.
+func ParseFile(filename string) []byte <span class="cov8" title="1">{
+        file, e := os.ReadFile(filename)
+        if e != nil </span><span class="cov0" title="0">{
+                fmt.Printf("File error: %v\n", e)
+                os.Exit(1)
+        }</span>
+        <span class="cov8" title="1">return file</span>
+}
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package utils
+
+import (
+        "crypto/sha256"
+        "fmt"
+        "log"
+        "math/rand"
+        "net/http"
+        "strconv"
+        "strings"
+        "time"
+)
+
+// GetIDFromRequest Get the ID from the request
+func GetIDFromRequest(r *http.Request) (string, error) <span class="cov8" title="1">{
+        id := r.PathValue("id")
+        if id == "" </span><span class="cov8" title="1">{
+                // Special case: for testing purposes, we allow the ID to be passed as a query parameter
+                id = r.URL.Query().Get("id")
+                log.Println("ID from query parameter: ", id, " URL: ", r.URL.String())
+                if id == "" </span><span class="cov8" title="1">{
+                        log.Println("ID not provided")
+                        return "", fmt.Errorf("ID not provided")
+                }</span>
+        }
+
+        <span class="cov8" title="1">return id, nil</span>
+}
+
+// Function to generate a random string of specified length
+func generateRandomString(length int) string <span class="cov8" title="1">{
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+        result := make([]byte, length)
+        for i := range result </span><span class="cov8" title="1">{
+                result[i] = charset[seededRand.Intn(len(charset))]
+        }</span>
+        <span class="cov8" title="1">return string(result)</span>
+}
+
+// GenerateRandomID Function to generate custom 8 character ID
+func GenerateRandomID() string <span class="cov8" title="1">{
+        // Generate random string
+        randomString := generateRandomString(10)
+
+        // Generate timestamp as salt
+        timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+
+        // Concatenate random string and timestamp
+        concatenated := randomString + timestamp
+
+        // Hash the concatenated string using SHA-256
+        hash := sha256.New()
+        hash.Write([]byte(concatenated))
+        hashed := hash.Sum(nil)
+
+        // Convert hashed bytes to hexadecimal string
+        customID64 := fmt.Sprintf("%x", hashed)
+
+        // Uses builder to get every 8th character from customID64, resulting in only 8 characters
+        var customIDBuilder strings.Builder
+        for i := 0; i &lt; len(customID64); i++ </span><span class="cov8" title="1">{
+                if i%8 == 0 </span><span class="cov8" title="1">{
+                        customIDBuilder.WriteRune(rune(customID64[i]))
+                }</span>
+        }
+
+        <span class="cov8" title="1">return customIDBuilder.String()</span>
+}
+</pre>
+		
+		<pre class="file" id="file19" style="display: none">package utils
+
+import (
+        "log"
+        "os"
+)
+
+// DefaultPort Default port for the server
+const DefaultPort = "8000"
+
+// TestPort Test port for the server
+const TestPort = "8001"
+
+// GetPort Get the port from the environment variable, or use the default port
+func GetPort() string <span class="cov0" title="0">{
+        // Get the PORT environment variable
+        port := os.Getenv("PORT")
+
+        // Use default Port variable if not provided
+        if port == "" </span><span class="cov0" title="0">{
+                log.Println("$PORT has not been set. Default: " + DefaultPort)
+                port = DefaultPort
+        }</span>
+
+        <span class="cov0" title="0">return port</span>
+}
+
+// GetTestPort Get the test port from the environment variable, or use the default test port
+func GetTestPort() string <span class="cov8" title="1">{
+        // Get the PORT environment variable
+        port := os.Getenv("TEST_PORT")
+
+        // Use default Port variable if not provided
+        if port == "" </span><span class="cov8" title="1">{
+                log.Println("$TEST_PORT has not been set. Default: " + TestPort)
+                port = TestPort
+        }</span>
+
+        <span class="cov8" title="1">return port</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
