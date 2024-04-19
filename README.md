@@ -658,6 +658,12 @@ See coverage report for information about test coverage.
 ./run_tests.sh
 ```
 
+This command was used to generate the coverage report:
+
+```bash
+clear; go clean -testcache; go test ./... -coverprofile=coverage.out; go tool cover -html=coverage.out -o coverage.html; rm coverage.out
+```
+
 External services are mocked in the tests, so no external services are required to run the tests.
 
 ### Coverage

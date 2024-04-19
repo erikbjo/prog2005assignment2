@@ -2,7 +2,7 @@ package notifications
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/utils"
@@ -58,9 +58,9 @@ func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 	log.Printf("Received request to get notification with ID %s\n", id)
 
 	// Get the notification with the provided ID
-	notification, err2 := firebase.GetDocument[requests.Notification](
+	notification, err2 := db.GetDocument[requests.Notification](
 		id,
-		firebase.NotificationCollection,
+		db.NotificationCollection,
 	)
 	if err2 != nil {
 		http.Error(
@@ -102,7 +102,7 @@ func handleNotificationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 
 	log.Println("Received request to delete notification with ID ", id)
 
-	err2 := firebase.DeleteDocument(id, firebase.NotificationCollection)
+	err2 := db.DeleteDocument(id, db.NotificationCollection)
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return

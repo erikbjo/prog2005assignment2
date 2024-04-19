@@ -1,7 +1,7 @@
 package notifications
 
 import (
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/requests"
 	"testing"
 	"time"
@@ -170,9 +170,9 @@ func TestInvokeNotification(t *testing.T) {
 				timeBefore := time.Now()
 				*tt.args.notification.LastInvoke = timeBefore
 
-				_ = firebase.AddDocument[requests.Notification](
+				_ = db.AddDocument[requests.Notification](
 					tt.args.notification,
-					firebase.NotificationCollection,
+					db.NotificationCollection,
 				)
 				InvokeNotification(tt.args.notification)
 				timeAfter := tt.args.notification.LastInvoke

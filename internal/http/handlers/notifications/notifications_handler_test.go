@@ -1,7 +1,7 @@
 package notifications
 
 import (
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/mock"
 	"bytes"
@@ -28,7 +28,7 @@ func setupDB() {
 		{Url: "testURL.com", Event: "REGISTER", Country: ""},
 	}
 	for _, n := range mockNotifications {
-		err := firebase.AddDocument[requests.Notification](n, firebase.NotificationCollection)
+		err := db.AddDocument[requests.Notification](n, db.NotificationCollection)
 		if err != nil {
 			log.Println("Error while trying to add notification to db: ", err.Error())
 		}

@@ -2,7 +2,7 @@ package registrations
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/utils"
@@ -62,9 +62,9 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 	log.Printf("Received request to get registration with ID %s\n", id)
 
 	// Get the registration with the provided ID
-	dashboard, err2 := firebase.GetDocument[requests.DashboardConfig](
+	dashboard, err2 := db.GetDocument[requests.DashboardConfig](
 		id,
-		firebase.DashboardCollection,
+		db.DashboardCollection,
 	)
 	if err2 != nil {
 		http.Error(
@@ -118,9 +118,9 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 
 	log.Println("Received request to update registration with ID ", id)
 
-	err3 := firebase.UpdateDocument[requests.DashboardConfig](
+	err3 := db.UpdateDocument[requests.DashboardConfig](
 		update, id,
-		firebase.DashboardCollection,
+		db.DashboardCollection,
 	)
 	if err3 != nil {
 		http.Error(w, err3.Error(), http.StatusInternalServerError)
@@ -137,7 +137,7 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 
 	log.Println("Received request to delete registration with ID ", id)
 
-	err2 := firebase.DeleteDocument(id, firebase.DashboardCollection)
+	err2 := db.DeleteDocument(id, db.DashboardCollection)
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return

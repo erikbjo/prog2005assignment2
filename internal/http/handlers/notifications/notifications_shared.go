@@ -1,7 +1,7 @@
 package notifications
 
 import (
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/utils"
@@ -32,7 +32,7 @@ func FindNotifications(event string) ([]requests.Notification, error) {
 		return nil, fmt.Errorf("invalid event type: %v", event)
 	}
 
-	notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+	notifications, err := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
 	if err != nil {
 		log.Println("Error while trying to receive notification from db: ", err.Error())
 		return nil, err
@@ -56,7 +56,7 @@ func FindNotificationsByCountry(event string, country string) ([]requests.Notifi
 		return nil, fmt.Errorf("invalid event type: %v", event)
 	}
 
-	notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+	notifications, err := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
 	if err != nil {
 		log.Println("Error while trying to receive notification from db: ", err.Error())
 		return nil, err
@@ -77,9 +77,9 @@ func InvokeNotification(notification requests.Notification) {
 	currentTime := time.Now()
 	notification.LastInvoke = &currentTime
 
-	err := firebase.UpdateDocument[requests.Notification](
+	err := db.UpdateDocument[requests.Notification](
 		notification, notification.ID,
-		firebase.NotificationCollection,
+		db.NotificationCollection,
 	)
 	if err != nil {
 		log.Println("Error while updating document: " + err.Error())

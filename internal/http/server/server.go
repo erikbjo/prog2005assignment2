@@ -2,7 +2,7 @@ package server
 
 import (
 	"assignment-2/internal/constants"
-	"assignment-2/internal/datasources/firebase"
+	"assignment-2/internal/db"
 	"assignment-2/internal/http/handlers"
 	"assignment-2/internal/http/handlers/dashboards"
 	"assignment-2/internal/http/handlers/notifications"
@@ -19,10 +19,10 @@ Start the server on the port specified in the environment variable PORT. If PORT
 */
 func Start() {
 	// Initialization of firebase database
-	firebase.Initialize()
+	db.Initialize()
 
 	// Firebase client closes at the end of this function
-	defer firebase.Close()
+	defer db.Close()
 
 	// Get the port from the environment variable, or use the default port
 	port := utils.GetPort()
