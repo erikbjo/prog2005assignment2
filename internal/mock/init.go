@@ -5,7 +5,9 @@ import (
 	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/mock/stubs"
 	"assignment-2/internal/utils"
+	"log"
 	"net/http"
+	"os/exec"
 )
 
 func InitForTesting() {
@@ -40,6 +42,17 @@ func createTestHttpServer() {
 }
 
 func TeardownAfterTesting() {
+	cmd := exec.Command(
+		"curl",
+		"-v",
+		"-X",
+		"DELETE",
+		"http://localhost:8888/emulator/v1/projects/prog2005-assignment-2-c2e5c/databases/(default)/documents",
+	)
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to stop Firestore emulator: %v", err)
+	}
+
 	// // Clean up any resources after all tests have been executed
 	// firebase.Close()
 	//
