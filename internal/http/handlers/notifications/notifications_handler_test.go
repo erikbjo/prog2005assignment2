@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/mock"
 	"bytes"
@@ -19,10 +20,27 @@ var testNotification = requests.Notification{
 
 var jsonTestNotification, _ = json.Marshal(testNotification)
 
+func setupDB() {
+	mockNotifications := []requests.Notification{
+		{Url: "testURL.com", Event: "REGISTER", Country: "NO"},
+		{Url: "testURL.com", Event: "INVOKE", Country: "NO"},
+		{Url: "testURL.com", Event: "INVOKE", Country: "SE"},
+		{Url: "testURL.com", Event: "REGISTER", Country: ""},
+	}
+	for _, n := range mockNotifications {
+		err := firebase.AddDocument[requests.Notification](n, firebase.NotificationCollection)
+		if err != nil {
+			log.Println("Error while trying to add notification to db: ", err.Error())
+		}
+	}
+}
+
 func TestMain(m *testing.M) {
 	// Setup function
 	log.Println("Setup for testing")
 	mock.InitForTesting()
+
+	setupDB()
 
 	// Run tests
 	m.Run()
@@ -165,6 +183,7 @@ func Test_handleNotificationsPostRequest(t *testing.T) {
 						)
 					}
 				}
+
 			},
 		)
 	}
