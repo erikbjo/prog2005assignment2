@@ -23,7 +23,8 @@ type siteMap struct {
 var SiteMap = siteMap{
 	Help: "This is the default handler for the server. " +
 		"Maybe you typed the wrong path or are looking for the web page. " +
-		"Go to '/' to read the README.md file.",
+		"Go to '/' to read the README.md file." +
+		"ID is required for endpoints with path ending in {id}.",
 	Endpoints: []inhouse.Endpoint{},
 }
 

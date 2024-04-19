@@ -42,7 +42,7 @@ var implementedMethods = []string{
 
 // Endpoint for managing dashboards
 var dashboardsEndpoint = inhouse.Endpoint{
-	Path:        constants.DashboardsPath,
+	Path:        constants.DashboardsPath + "{id}",
 	Methods:     implementedMethods,
 	Description: "Endpoint for managing dashboards.",
 }
