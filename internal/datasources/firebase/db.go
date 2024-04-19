@@ -289,7 +289,7 @@ func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot,
 	docSnap, err := iter.Next()
 	if err != nil {
 		if errors.Is(err, iterator.Done) {
-			return nil, fmt.Errorf("document with ID %s not found in collection %s", id, collection)
+			return nil, fmt.Errorf("document not found in collection")
 		}
 		return nil, err
 	}
