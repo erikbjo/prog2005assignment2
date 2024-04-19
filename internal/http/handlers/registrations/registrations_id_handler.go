@@ -67,11 +67,16 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 		firebase.DashboardCollection,
 	)
 	if err2 != nil {
-		http.Error(
-			w,
-			"Error while trying to receive document from db.",
-			http.StatusInternalServerError,
-		)
+		switch err2.Error() {
+		case "no valid ID was provided":
+			http.Error(w, "No valid ID was provided", http.StatusBadRequest)
+		case "document not found in collection":
+			http.Error(w, "Document not found in collection", http.StatusNoContent)
+		default:
+			http.Error(
+				w, "Error while trying to receive document from db.", http.StatusInternalServerError,
+			)
+		}
 		log.Println("Error while trying to receive document from db: ", err2.Error())
 		return
 	}
@@ -125,7 +130,7 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 	if err3 != nil {
 		http.Error(w, err3.Error(), http.StatusInternalServerError)
 	}
-	log.Println("Successfully updated registration with ID:", id)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) {
@@ -142,4 +147,6 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
