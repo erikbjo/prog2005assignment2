@@ -185,6 +185,8 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set the status code to 201 Created
+	w.WriteHeader(http.StatusCreated)
 	// Write the JSON to the response
 	_, err5 := w.Write(marshaled)
 	if err5 != nil {

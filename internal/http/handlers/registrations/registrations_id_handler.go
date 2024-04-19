@@ -125,7 +125,7 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 	if err3 != nil {
 		http.Error(w, err3.Error(), http.StatusInternalServerError)
 	}
-	log.Println("Successfully updated registration with ID:", id)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) {
@@ -142,4 +142,6 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
