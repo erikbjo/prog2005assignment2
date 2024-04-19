@@ -105,8 +105,6 @@ func AddDocument[T any](
 		return err
 	}
 
-	log.Println("Document was successfully added to DB")
-
 	return nil
 }
 
@@ -253,7 +251,7 @@ func DeleteDocument(id string, collection string) error {
 		log.Println("Error while trying to find document: ", err.Error())
 		return err
 	}
-	log.Printf("The document: %s, was successfully deleted.", id)
+
 	return nil
 }
 
@@ -301,7 +299,10 @@ func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot,
 
 func InitializeForTesting() {
 	// Set the Firestore emulator host
-	err := os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:8888")
+	err := os.Setenv(
+		"FIRESTORE_EMULATOR_HOST",
+		"localhost:8080",
+	) // Default port for Firestore emulator
 	if err != nil {
 		log.Fatalf("Failed to set Firestore emulator host: %v", err)
 	} else {
