@@ -136,7 +136,6 @@ func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) {
 		"Content-Length": strconv.Itoa(len(marshaled)),
 	}
 
-	fmt.Println(headers)
 	// Set response headers
 	for key, value := range headers {
 		w.Header().Set(key, value)
