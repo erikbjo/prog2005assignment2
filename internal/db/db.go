@@ -3,7 +3,8 @@ package db
 import (
 	"assignment-2/internal/utils"
 	"cloud.google.com/go/firestore" // Firestore-specific support
-	"context"                       // State handling across API boundaries; part of native GoLang API
+	"cloud.google.com/go/firestore/apiv1/firestorepb"
+	"context" // State handling across API boundaries; part of native GoLang API
 	"encoding/json"
 	"errors"
 	firebase "firebase.google.com/go" // Generic firebase support
@@ -290,6 +291,27 @@ func documentExists(ctx context.Context, collection, documentID string) (bool, e
 	}
 
 	return true, nil
+}
+
+/*
+numOfDocumentsInCollection Returns the number of documents in the collection.
+*/
+func NumOfDocumentsInCollection(collection string) (int, error) {
+	result, err := client.Collection(collection).NewAggregationQuery().WithCount("all").Get(ctx)
+	if err != nil {
+		log.Println("firestore: error while trying to get count of documents in collection")
+		return -1, fmt.Errorf("firestore: error while trying to get count of documents in collection")
+	}
+
+	count, ok := result["all"]
+	if !ok {
+		log.Println("firestore: couldn't get alias for COUNT from results")
+		return -1, fmt.Errorf("firestore: couldn't get alias for COUNT from results")
+	}
+
+	countValue := count.(*firestorepb.Value)
+
+	return int(countValue.GetIntegerValue()), nil
 }
 
 /*
