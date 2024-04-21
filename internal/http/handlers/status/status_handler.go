@@ -68,15 +68,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Create a new status object
-	// TODO: Implement the Webhooks
 	// TODO: Implement firebase testing/mocking
+	notificationCount, err := firebase.NumOfDocumentsInCollection(firebase.NotificationCollection)
+	if err != nil {
+		http.Error(w, "Failed to get notification count", http.StatusInternalServerError)
+		return
+	}
+
 	currentStatus := status{
 		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
 		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
 		CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
 		DashboardDB:    firebase.GetStatusCodeOfCollection(w, firebase.DashboardCollection),
 		NotificationDB: firebase.GetStatusCodeOfCollection(w, firebase.NotificationCollection),
-		Webhooks:       http.StatusNotImplemented,
+		Webhooks:       notificationCount,
 		Version:        constants.Version,
 		Uptime:         int(math.Round(time.Since(utils.StartTime).Seconds())),
 	}
