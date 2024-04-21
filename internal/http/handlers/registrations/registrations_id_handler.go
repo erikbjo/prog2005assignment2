@@ -5,6 +5,7 @@ import (
 	"assignment-2/internal/datasources/firebase"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
+	"assignment-2/internal/http/handlers/notifications"
 	"assignment-2/internal/utils"
 	"encoding/json"
 	"fmt"
@@ -130,6 +131,22 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 	if err3 != nil {
 		http.Error(w, err3.Error(), http.StatusInternalServerError)
 	}
+
+	// Check if any notifications are registered for the event
+	foundNotifications, err4 := notifications.FindNotificationsByCountry(requests.EventChange, update.IsoCode)
+	if err4 != nil {
+		log.Println("Error while trying to find notifications: ", err4.Error())
+		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		return
+	}
+
+	// If found, invoke the notifications
+	if len(foundNotifications) > 0 {
+		for _, n := range foundNotifications {
+			notifications.InvokeNotification(n)
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -140,12 +157,47 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Get the registration with the provided ID
+	dashboard, err3 := firebase.GetDocument[requests.DashboardConfig](
+		id,
+		firebase.DashboardCollection,
+	)
+	if err3 != nil {
+		switch err3.Error() {
+		case "no valid ID was provided":
+			http.Error(w, "No valid ID was provided", http.StatusBadRequest)
+		case "document not found in collection":
+			http.Error(w, "Document not found in collection", http.StatusNoContent)
+		default:
+			http.Error(
+				w, "Error while trying to receive document from db.", http.StatusInternalServerError,
+			)
+		}
+		log.Println("Error while trying to receive document from db: ", err3.Error())
+		return
+	}
+
 	log.Println("Received request to delete registration with ID ", id)
 
 	err2 := firebase.DeleteDocument(id, firebase.DashboardCollection)
 	if err2 != nil {
 		http.Error(w, err2.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Check if any notifications are registered for the event
+	foundNotifications, err4 := notifications.FindNotificationsByCountry(requests.EventDelete, dashboard.IsoCode)
+	if err4 != nil {
+		log.Println("Error while trying to find notifications: ", err4.Error())
+		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		return
+	}
+
+	// If found, invoke the notifications
+	if len(foundNotifications) > 0 {
+		for _, n := range foundNotifications {
+			notifications.InvokeNotification(n)
+		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)

@@ -6,6 +6,7 @@ import (
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
 	"assignment-2/internal/http/datatransfers/responses"
+	"assignment-2/internal/http/handlers/notifications"
 	utils2 "assignment-2/internal/utils"
 	"dario.cat/mergo"
 	"encoding/json"
@@ -188,6 +189,21 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 			http.StatusInternalServerError,
 		)
 		return
+	}
+
+	// Check if any notifications are registered for the event
+	foundNotifications, err4 := notifications.FindNotificationsByCountry(requests.EventInvoke, filteredResponse.IsoCode)
+	if err4 != nil {
+		log.Println("Error while trying to find notifications: ", err4.Error())
+		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		return
+	}
+
+	// If found, invoke the notifications
+	if len(foundNotifications) > 0 {
+		for _, n := range foundNotifications {
+			notifications.InvokeNotification(n)
+		}
 	}
 
 	// Marshal the status object to JSON
