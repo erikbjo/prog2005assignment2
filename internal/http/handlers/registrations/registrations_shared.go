@@ -1,7 +1,7 @@
 package registrations
 
 import (
-	`assignment-2/internal/http/datatransfers/inhouse`
+	"assignment-2/internal/http/datatransfers/inhouse"
 	"time"
 )
 
