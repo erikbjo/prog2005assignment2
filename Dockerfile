@@ -14,9 +14,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags '-extldflags "-static"' -o exe
 # Define exposed port
 EXPOSE 8000 8001
 
-# Create .env file
-# TODO: Export local .env file to container, this is a temporary solution
-RUN echo 'PORT="8000"' > .env
+# Create empty .env, as the env variables are set in the docker-compose file, and the file is needed for the application to run
+RUN touch .env
 
 # Entrypoint command
 ENTRYPOINT ["./executable"]

@@ -3,6 +3,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - PORT=${PORT}
+      - TEST_PORT=${TEST_PORT}
+      - TYPE=${TYPE}
+      - PROJECTID=${PROJECTID}
+      - PRIVATEKEYID=${PRIVATEKEYID}
+      - PRIVATEKEY=${PRIVATEKEY}
+      - CLIENTEMAIL=${CLIENTEMAIL}
+      - CLIENTID=${CLIENTID}
+      - AUTHURI=${AUTHURI}
+      - TOKENURI=${TOKENURI}
+      - AUTHPROVIDERX509CERTURL=${AUTHPROVIDERX509CERTURL}
+      - CLIENTX509CERTURL=${CLIENTX509CERTURL}
+      - UNIVERSEDOMAIN=${UNIVERSEDOMAIN}
     ports:
       - "8000:8000"
       - "8001:8001"
