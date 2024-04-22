@@ -158,9 +158,9 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Get the registration with the provided ID
-	dashboard, err3 := firebase.GetDocument[requests.DashboardConfig](
+	dashboard, err3 := db.GetDocument[requests.DashboardConfig](
 		id,
-		firebase.DashboardCollection,
+		db.DashboardCollection,
 	)
 	if err3 != nil {
 		switch err3.Error() {

@@ -52,7 +52,7 @@ func HandlerWithoutID(w http.ResponseWriter, r *http.Request) {
 
 func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Get all notification documents from db
-	allDocuments, err2 := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+	allDocuments, err2 := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
 	if err2 != nil {
 		http.Error(
 			w,
