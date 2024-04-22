@@ -74,7 +74,7 @@ func Test_handleRegistrationsDeleteRequestWithID(t *testing.T) {
 					nil,
 				),
 			},
-			wantedStatus: http.StatusOK,
+			wantedStatus: http.StatusNoContent,
 		},
 		{
 			name: "NegativeDeleteRequestWithID",
@@ -82,12 +82,12 @@ func Test_handleRegistrationsDeleteRequestWithID(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodDelete,
-					constants.RegistrationsPath+"?id=invalidID",
+					constants.RegistrationsPath+"?id=",
 					nil,
 				),
 			},
 			// Should maybe be bad request, but the db function returns internal server error
-			wantedStatus: http.StatusInternalServerError,
+			wantedStatus: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {
@@ -134,12 +134,12 @@ func Test_handleRegistrationsGetRequestWithID(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodGet,
-					constants.RegistrationsPath+"?id=invalidID",
+					constants.RegistrationsPath+"?id=",
 					nil,
 				),
 			},
 			// Should maybe be bad request, but the db function returns internal server error
-			wantedStatus: http.StatusInternalServerError,
+			wantedStatus: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {
@@ -178,7 +178,7 @@ func Test_handleRegistrationsPutRequestWithID(t *testing.T) {
 					bytes.NewBuffer(jsonTestRegistration),
 				),
 			},
-			wantedStatus: http.StatusOK,
+			wantedStatus: http.StatusNoContent,
 		},
 		{
 			name: "NegativePutRequestWithID",

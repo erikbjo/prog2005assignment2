@@ -594,6 +594,7 @@ The service can be configured using the following environment variables:
 
 ```dotenv
 PORT=
+TEST_PORT=
 TYPE=
 PROJECTID=
 PRIVATEKEYID=
@@ -615,26 +616,6 @@ The service can be deployed using the following command:
 
 ```bash
 docker compose up -d --build
-```
-
-TODO: Implement/remove this
-
-```dockerfile
-# Install Node.js and npm for firebase
-RUN apt-get update
-RUN curl -sL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
-RUN bash /tmp/nodesource_setup.sh
-RUN apt-get install -y nodejs
-
-# Java
-RUN apt install default-jre -y
-RUN apt install default-jdk -y
-
-# Sleep for 5 seconds to let the installation finish
-#RUN sleep 5
-
-# Install firebase for testing
-RUN npm install -g firebase-tools
 ```
 
 ### Logs
@@ -661,7 +642,7 @@ See coverage report for information about test coverage.
 This command was used to generate the coverage report:
 
 ```bash
-clear; go clean -testcache; go test ./... -coverprofile=coverage.out; go tool cover -html=coverage.out -o coverage.html; rm coverage.out
+clear; go clean -testcache; ./run_tests.sh; go tool cover -html=coverage.out -o coverage.html; rm coverage.out
 ```
 
 External services are mocked in the tests, so no external services are required to run the tests.
@@ -677,7 +658,12 @@ open coverage.html
 
 ## Known issues
 
+The tests fails unless firebase is set up. This is because the tests require the firestore emulator to be running.
+
 ## Future work
+
+Input validation is not thoroughly implemented in the service. This should be implemented to ensure that the service is robust and
+secure.
 
 ## Contact
 

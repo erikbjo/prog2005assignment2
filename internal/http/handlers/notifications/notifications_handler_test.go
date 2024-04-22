@@ -147,7 +147,7 @@ func Test_handleNotificationsPostRequest(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonTestNotification)),
 			},
-			wantedStatus: http.StatusOK,
+			wantedStatus: http.StatusCreated,
 		},
 		{
 			name: "PostInvalidRequest",

@@ -51,7 +51,7 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.GetIDFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)
 		return
 	}
 

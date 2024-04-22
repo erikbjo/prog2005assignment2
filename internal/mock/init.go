@@ -44,8 +44,8 @@ func createTestHttpServer() {
 			err := server.ListenAndServe()
 			if err != nil {
 				if err.Error() == "listen tcp :8001: bind: address already in use" {
-					log.Println("Port 8001 is in use, sleeping for 2 seconds and trying again")
-					time.Sleep(2 * time.Second)
+					log.Println("Port 8001 is in use, sleeping for 5 seconds and trying again")
+					time.Sleep(5 * time.Second)
 					err = server.ListenAndServe()
 					if err != nil {
 						log.Fatalf("Failed to start http server: %v", err)
