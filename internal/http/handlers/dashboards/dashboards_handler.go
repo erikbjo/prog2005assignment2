@@ -85,10 +85,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 		db.DashboardCollection,
 	)
 	if err != nil {
-		log.Println("Error while trying to display dashboard document: ", err.Error())
+		log.Println(constants.ErrDBGetDoc + err.Error())
 		http.Error(
 			w,
-			"Error while trying to display dashboard document",
+			constants.ErrDBGetDoc,
 			http.StatusInternalServerError,
 		)
 		return
@@ -103,10 +103,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	var features dashboardFeatures
 	countryFeatures, err := getCountryData(dashboardConfig.IsoCode)
 	if err != nil {
-		log.Println("Error while trying to get country data: ", err.Error())
+		log.Println(constants.ErrDashboardGetCountryData + err.Error())
 		http.Error(
 			w,
-			"Error while trying to get country data.",
+			constants.ErrDashboardGetCountryData,
 			http.StatusInternalServerError,
 		)
 		return
@@ -115,10 +115,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Merge the features
 	err = mergo.Merge(&features, countryFeatures, mergo.WithOverride, mergo.WithoutDereference)
 	if err != nil {
-		log.Println("Error while trying to merge country features: ", err.Error())
+		log.Println(constants.ErrDashboardMergingData + err.Error())
 		http.Error(
 			w,
-			"Error while trying to merge country features.",
+			constants.ErrDashboardMergingData,
 			http.StatusInternalServerError,
 		)
 		return
@@ -127,10 +127,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Get the meteo features
 	meteoFeatures, err := getMeteoData(features.Coordinates)
 	if err != nil {
-		log.Println("Error while trying to get meteo data: ", err.Error())
+		log.Println(constants.ErrDashboardGetWeatherData + err.Error())
 		http.Error(
 			w,
-			"Error while trying to get meteo data.",
+			constants.ErrDashboardGetWeatherData,
 			http.StatusInternalServerError,
 		)
 		return
@@ -139,10 +139,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Merge the features
 	err = mergo.Merge(&features, meteoFeatures, mergo.WithOverride, mergo.WithoutDereference)
 	if err != nil {
-		log.Println("Error while trying to merge meteo features: ", err.Error())
+		log.Println(constants.ErrDashboardMergingData + err.Error())
 		http.Error(
 			w,
-			"Error while trying to merge meteo features.",
+			constants.ErrDashboardMergingData,
 			http.StatusInternalServerError,
 		)
 		return
@@ -154,10 +154,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 		countryFeatures.Currency,
 	)
 	if err != nil {
-		log.Println("Error while trying to get currency rates: ", err.Error())
+		log.Println(constants.ErrDashboardGetCurrencyData + err.Error())
 		http.Error(
 			w,
-			"Error while trying to get currency rates.",
+			constants.ErrDashboardGetCurrencyData,
 			http.StatusInternalServerError,
 		)
 		return
@@ -166,10 +166,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Merge the features
 	err = mergo.Merge(&features, currencyFeatures, mergo.WithOverride, mergo.WithoutDereference)
 	if err != nil {
-		log.Println("Error while trying to merge currency features: ", err.Error())
+		log.Println(constants.ErrDashboardMergingData + err.Error())
 		http.Error(
 			w,
-			"Error while trying to merge currency features.",
+			constants.ErrDashboardMergingData,
 			http.StatusInternalServerError,
 		)
 		return
@@ -182,20 +182,23 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Filter the response by the config
 	filteredResponse, err := filterDashboardByConfig(response, dashboardConfig)
 	if err != nil {
-		log.Println("Error while trying to filter dashboard features: ", err.Error())
+		log.Println(constants.ErrDashboardFilterByRegistration + err.Error())
 		http.Error(
 			w,
-			"Error while trying to filter dashboard features.",
+			constants.ErrDashboardFilterByRegistration,
 			http.StatusInternalServerError,
 		)
 		return
 	}
 
 	// Check if any notifications are registered for the event
-	foundNotifications, err4 := notifications.FindNotificationsByCountry(requests.EventInvoke, filteredResponse.IsoCode)
+	foundNotifications, err4 := notifications.FindNotificationsByCountry(
+		requests.EventInvoke,
+		filteredResponse.IsoCode,
+	)
 	if err4 != nil {
-		log.Println("Error while trying to find notifications: ", err4.Error())
-		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		log.Println(constants.ErrNotificationsGetDocFromDB, err4.Error())
+		http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
 		return
 	}
 
@@ -213,16 +216,16 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) {
 		"\t",
 	)
 	if err != nil {
-		log.Println("Error during JSON encoding: " + err.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		log.Println(constants.ErrJsonMarshal + err.Error())
+		http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 		return
 	}
 
 	// Write the JSON to the response
 	_, err = w.Write(marshaled)
 	if err != nil {
-		log.Println("Failed to write response: " + err.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		log.Println(constants.ErrWriteResponse + err.Error())
+		http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		return
 	}
 }
@@ -240,8 +243,8 @@ func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) {
 		nil,
 	)
 	if err1 != nil {
-		log.Println("Error in creating request:", err1.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in creating request")
+		log.Println(constants.ErrExternalRequest, err1.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalRequest)
 	}
 
 	r.Header.Add("content-type", "application/json")
@@ -249,16 +252,16 @@ func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) {
 	// Issue request
 	res, err2 := utils2.Client.Do(r)
 	if err2 != nil {
-		log.Println("Error in response:", err2.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in response")
+		log.Println(constants.ErrExternalResponse, err2.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalResponse)
 	}
 
 	// Decode JSON
 	var meteo responses.MeteoForecastResponse
 	err3 := json.NewDecoder(res.Body).Decode(&meteo)
 	if err3 != nil {
-		log.Println("Error in decoding JSON:", err3.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+		log.Println(constants.ErrJsonDecode, err3.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrJsonDecode)
 	}
 
 	// Gets the average of all hourly temperatures and rounds to 5 decimal points
@@ -283,32 +286,30 @@ func getCountryData(isoCode string) (dashboardFeatures, error) {
 		nil,
 	)
 	if err1 != nil {
-		log.Println("Error in creating request:", err1.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in creating request")
+		log.Println(constants.ErrExternalRequest, err1.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalRequest)
 	}
-
-	log.Println("Request url: ", r.URL)
 
 	r.Header.Add("content-type", "application/json")
 
 	// Issue request
 	res, err2 := utils2.Client.Do(r)
 	if err2 != nil {
-		log.Println("Error in response:", err2.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in response")
+		log.Println(constants.ErrExternalResponse, err2.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalResponse)
 	}
 
 	// Decode JSON
 	var country responses.ResponseFromRestcountries
 	err3 := json.NewDecoder(res.Body).Decode(&country)
 	if err3 != nil {
-		log.Println("Error in decoding JSON:", err3.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+		log.Println(constants.ErrJsonDecode, err3.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrJsonDecode)
 	}
 
 	if country.Name.Common == "" {
-		log.Println("Country not found")
-		return dashboardFeatures{}, fmt.Errorf("country not found")
+		log.Println(constants.ErrDashboardCountryNotFound)
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrDashboardCountryNotFound)
 	}
 
 	lat := country.Latlng[0]
@@ -355,34 +356,32 @@ func getCurrencyData(
 		nil,
 	)
 	if err1 != nil {
-		log.Println("Error in creating request:", err1.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in creating request")
+		log.Println(constants.ErrExternalRequest, err1.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalRequest)
 	}
 
 	r.Header.Add("content-type", "application/json")
-	log.Println("Request: ", r)
 
 	// Issue request
 	res, err2 := utils2.Client.Do(r)
 	if err2 != nil {
-		log.Println("Error in response:", err2.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in response")
+		log.Println(constants.ErrExternalResponse, err2.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalResponse)
 	}
 
 	// Decode JSON
 	var response responses.ResponseFromCurrency
 	err3 := json.NewDecoder(res.Body).Decode(&response)
 	if err3 != nil {
-		log.Println("Error in decoding JSON:", err3.Error())
-		return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+		log.Println(constants.ErrJsonDecode, err3.Error())
+		return dashboardFeatures{}, fmt.Errorf(constants.ErrJsonDecode)
 	}
 
 	// Get the exchange rates for the target currencies
 	for _, targetCurrency := range targetCurrencies {
 		if _, ok := response.Rates[targetCurrency]; !ok {
-			log.Println("Exchange rate not found for currency: ", targetCurrency)
 			// Not returning error, just setting the rate to 0
-			featuresFromCurrency.TargetCurrencies["targetCurrency"] = 0
+			featuresFromCurrency.TargetCurrencies[targetCurrency] = 0
 		} else {
 			featuresFromCurrency.TargetCurrencies[targetCurrency] = response.Rates[targetCurrency]
 		}
@@ -409,7 +408,7 @@ func filterDashboardByConfig(oldDashboard dashboard, config requests.DashboardCo
 	error,
 ) {
 	if config.Country != oldDashboard.Country {
-		return dashboard{}, fmt.Errorf("country does not match")
+		return dashboard{}, fmt.Errorf(constants.ErrDashboardCountryNotMatch)
 	}
 	// Returns a new dashboard with the features filtered by the config
 	newDashboard := dashboard{

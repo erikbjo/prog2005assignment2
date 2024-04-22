@@ -56,10 +56,10 @@ func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) {
 	if err2 != nil {
 		http.Error(
 			w,
-			"Error while trying to receive document from db.",
+			constants.ErrDBGetDoc,
 			http.StatusInternalServerError,
 		)
-		log.Println("Error while trying to receive document from db: ", err2.Error())
+		log.Println(constants.ErrDBGetDoc + err2.Error())
 		return
 	}
 	if len(allDocuments) > 0 {
@@ -70,20 +70,20 @@ func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) {
 			"\t",
 		)
 		if err3 != nil {
-			log.Println("Error during JSON encoding: " + err3.Error())
-			http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+			log.Println(constants.ErrJsonMarshal + err3.Error())
+			http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 			return
 		}
 
 		// Write the JSON to the response
 		_, err4 := w.Write(marshaled)
 		if err4 != nil {
-			log.Println("Failed to write response: " + err4.Error())
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			log.Println(constants.ErrWriteResponse + err4.Error())
+			http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 			return
 		}
 	} else {
-		http.Error(w, "No documents found", http.StatusNoContent)
+		http.Error(w, constants.ErrDBNoDocs, http.StatusNoContent)
 	}
 }
 
@@ -92,12 +92,12 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&content); err != nil {
-		log.Println("Error while decoding json: ", err.Error())
+		log.Println(constants.ErrJsonDecode + err.Error())
 	}
 
 	// Checks if event in body is isValid
 	if isValidEvent(content.Event) == false {
-		http.Error(w, "Invalid event type provided", http.StatusBadRequest)
+		http.Error(w, constants.ErrNotificationsInvalidType, http.StatusBadRequest)
 		return
 	}
 
@@ -106,7 +106,7 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	// Save the Notification to the database
 	err2 := db.AddDocument[requests.Notification](content, db.NotificationCollection)
 	if err2 != nil {
-		http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+		http.Error(w, constants.ErrDBAddDoc, http.StatusInternalServerError)
 	}
 
 	// Return the ID of the saved Notification
@@ -117,8 +117,8 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 		"\t",
 	)
 	if err3 != nil {
-		log.Println("Error during JSON encoding: " + err3.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		log.Println(constants.ErrJsonMarshal + err3.Error())
+		http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 		return
 	}
 
@@ -127,8 +127,8 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) {
 	// Write the JSON to the response
 	_, err4 := w.Write(marshaled)
 	if err4 != nil {
-		log.Println("Failed to write response: " + err4.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		log.Println(constants.ErrWriteResponse + err4.Error())
+		http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		return
 	}
 }

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"assignment-2/internal/constants"
 	"assignment-2/internal/utils"
 	"cloud.google.com/go/firestore" // Firestore-specific support
 	"cloud.google.com/go/firestore/apiv1/firestorepb"
@@ -53,9 +54,7 @@ type serviceAccountKey struct {
 func GetStatusCodeOfCollection(collection string) int {
 	// Check if the Firestore client is initialized
 	if client == nil {
-		// If client is nil, return 503 Service Unavailable status code
-		// http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
-		log.Println("Firestore client is not initialized")
+		log.Println(constants.ErrFirestoreClientNotInit)
 		return http.StatusServiceUnavailable
 	}
 
@@ -66,17 +65,14 @@ func GetStatusCodeOfCollection(collection string) int {
 		collection,
 	)
 	if err != nil {
-		log.Println("Error while trying to add dummy document to the collection: ", err.Error())
+		log.Println(constants.ErrDBAddDoc, err)
 		return http.StatusServiceUnavailable
 	}
 
 	defer func() {
 		err := DeleteDocument(id, collection)
 		if err != nil {
-			log.Println(
-				"Error while trying to delete dummy document from the collection: ",
-				err.Error(),
-			)
+			log.Println(constants.ErrDBDeleteDoc, err)
 		}
 	}()
 
@@ -88,11 +84,7 @@ func GetStatusCodeOfCollection(collection string) int {
 	_, err = iter.Next()
 	if err != nil {
 		// If there's an error connecting to the database, return 503 Service Unavailable status code
-		// http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
-		log.Println(
-			"Error while trying to retrieve the dummy document from the collection: ",
-			err.Error(),
-		)
+		log.Println(constants.ErrDBGetDoc, err)
 		return http.StatusServiceUnavailable
 	}
 
@@ -111,7 +103,7 @@ func AddDocument[T any](
 	// Assert type to target struct
 	target, ok := data.(T)
 	if !ok {
-		return fmt.Errorf("data does not match target struct")
+		return fmt.Errorf(constants.ErrDataNotMatchingTargetStruct)
 	}
 
 	// Add document to Firestore
@@ -148,8 +140,8 @@ func GetDocument[T any](
 		}
 		// A document map with string keys
 	} else {
-		log.Println("No valid ID was provided")
-		return data, fmt.Errorf("no valid ID was provided")
+		log.Println(constants.ErrIDInvalid)
+		return data, fmt.Errorf(constants.ErrIDInvalid)
 	}
 	return data, nil
 }
@@ -294,7 +286,7 @@ func documentExists(ctx context.Context, collection, documentID string) (bool, e
 }
 
 /*
-numOfDocumentsInCollection Returns the number of documents in the collection.
+NumOfDocumentsInCollection Returns the number of documents in the collection.
 */
 func NumOfDocumentsInCollection(collection string) (int, error) {
 	result, err := client.Collection(collection).NewAggregationQuery().WithCount("all").Get(ctx)
@@ -325,7 +317,7 @@ func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot,
 	docSnap, err := iter.Next()
 	if err != nil {
 		if errors.Is(err, iterator.Done) {
-			return nil, fmt.Errorf("document not found in collection")
+			return nil, fmt.Errorf(constants.ErrDBDocNotFound)
 		}
 		return nil, err
 	}
@@ -334,15 +326,15 @@ func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot,
 }
 
 func InitializeForTesting() {
+	log.Println("Initializing Firestore client for testing, be sure to have the Firestore emulator running")
+
 	// Set the Firestore emulator host
 	err := os.Setenv(
 		"FIRESTORE_EMULATOR_HOST",
 		"localhost:8080",
 	) // Default port for Firestore emulator
 	if err != nil {
-		log.Fatalf("Failed to set Firestore emulator host: %v", err)
-	} else {
-		log.Println("Firestore emulator host set successfully")
+		log.Fatal(constants.ErrFirestoreEmulatorEnv, err)
 	}
 
 	// Initialize Firestore client
@@ -354,12 +346,12 @@ func InitializeForTesting() {
 		option.WithoutAuthentication(),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create Firestore app: %v", err)
+		log.Fatal(constants.ErrFirestoreApp, err)
 	}
 
 	firestoreClient, err := app.Firestore(ctx)
 	if err != nil {
-		log.Fatalf("Failed to create Firestore client: %v", err)
+		log.Fatal(constants.ErrFirestoreClient, err)
 	}
 
 	// Assign the client to your package-level variable for Firestore client
@@ -402,7 +394,7 @@ func Initialize() {
 
 	app, err := firebase.NewApp(ctx, nil, sa)
 	if err != nil {
-		log.Fatal("Failed to create Firestore app: ", err)
+		log.Fatal(constants.ErrFirestoreApp, err)
 		return
 	}
 
@@ -411,9 +403,10 @@ func Initialize() {
 
 	// Check whether there is an error when connecting to Firestore
 	if err != nil {
-		log.Println("Failed to create Firestore client: ", err)
+		log.Fatal(constants.ErrFirestoreClient, err)
 		return
 	}
+
 	log.Println("Firestore client initialized normally")
 }
 
@@ -423,6 +416,6 @@ Close Closes the Firestore client.
 func Close() {
 	errClose := client.Close()
 	if errClose != nil {
-		log.Fatal("Closing of the Firebase client failed. Error:", errClose)
+		log.Fatal(constants.ErrFirestoreClose, errClose)
 	}
 }

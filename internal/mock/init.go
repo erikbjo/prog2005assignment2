@@ -59,31 +59,5 @@ func createTestHttpServer() {
 }
 
 func TeardownAfterTesting() {
-	// cmd := exec.Command(
-	// 	"curl",
-	// 	"-v",
-	// 	"-X",
-	// 	"DELETE",
-	// 	"http://localhost:8888/emulator/v1/projects/prog2005-assignment-2-c2e5c/databases/(" +
-	//	"default)/documents",
-	// )
-	// if err := cmd.Run(); err != nil {
-	// 	log.Fatalf("Failed to stop Firestore emulator: %v", err)
-	// }
-
-	// Close http server
-	// err := server.Close()
-	// if err != nil {
-	// 	log.Fatalf("Failed to shutdown http server: %v", err)
-	// }
-
-	// // Clean up any resources after all tests have been executed
-	// firebase.Close()
-	//
-	// // firebase emulators:stop
-	// cmd := exec.Command("firebase", "emulators:stop")
-	// if err := cmd.Run(); err != nil {
-	// 	log.Fatalf("Failed to stop Firestore emulator: %v", err)
-	// }
-	// os.Exit(0)
+	// Currently not used as Go creates a new instance of the server for each test
 }

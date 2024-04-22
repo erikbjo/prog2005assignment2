@@ -13,7 +13,8 @@ import (
 	"time"
 )
 
-// A Status struct to hold the status of the server, including the status of the APIs and the version
+// A status struct to hold the status of the server,
+// including the status of the external APIs and the version
 // of the server.
 type status struct {
 	CountriesAPI   int    `json:"countries_api"`
@@ -21,6 +22,7 @@ type status struct {
 	CurrencyAPI    int    `json:"currency_api"`
 	DashboardDB    int    `json:"dashboard_db"`
 	NotificationDB int    `json:"notification_db"`
+	Dashboards     int    `json:"dashboards"`
 	Webhooks       int    `json:"webhooks"`
 	Version        string `json:"version"`
 	Uptime         int    `json:"uptime"`
@@ -67,20 +69,26 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 // handleStatusGetRequest handles the GET request for the /status path.
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
-	// Create a new status object
-	// TODO: Implement firebase testing/mocking
 	notificationCount, err := db.NumOfDocumentsInCollection(db.NotificationCollection)
 	if err != nil {
-		http.Error(w, "Failed to get notification count", http.StatusInternalServerError)
+		http.Error(w, constants.ErrDBCount, http.StatusInternalServerError)
 		return
 	}
 
+	dashboardCount, err := db.NumOfDocumentsInCollection(db.DashboardCollection)
+	if err != nil {
+		http.Error(w, constants.ErrDBCount, http.StatusInternalServerError)
+		return
+	}
+
+	// Create a new status object
 	currentStatus := status{
 		CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
 		MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
 		CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
 		DashboardDB:    db.GetStatusCodeOfCollection(db.DashboardCollection),
 		NotificationDB: db.GetStatusCodeOfCollection(db.NotificationCollection),
+		Dashboards:     dashboardCount,
 		Webhooks:       notificationCount,
 		Version:        constants.Version,
 		Uptime:         int(math.Round(time.Since(utils.StartTime).Seconds())),
@@ -89,16 +97,16 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) {
 	// Marshal the status object to JSON
 	marshaledStatus, err := json.MarshalIndent(currentStatus, "", "\t")
 	if err != nil {
-		log.Println("Error during JSON encoding: " + err.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		log.Println(constants.ErrJsonMarshal + err.Error())
+		http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 		return
 	}
 
 	// Write the JSON to the response
 	_, err = w.Write(marshaledStatus)
 	if err != nil {
-		log.Println("Failed to write response: " + err.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		log.Println(constants.ErrWriteResponse + err.Error())
+		http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		return
 	}
 }

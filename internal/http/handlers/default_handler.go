@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"assignment-2/internal/constants"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/handlers/dashboards"
 	"assignment-2/internal/http/handlers/notifications"
@@ -73,22 +74,22 @@ func DefaultHandler(w http.ResponseWriter, r *http.Request) {
 		// Write the HTML response
 		_, err = w.Write(htmlWithStyles)
 		if err != nil {
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		}
 	} else {
 		// Else, return the site map
 		w.Header().Set("content-type", "application/json")
 		marshaledSiteMap, err := json.MarshalIndent(SiteMap, "", "\t")
 		if err != nil {
-			log.Println("Error during JSON encoding: " + err.Error())
-			http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+			log.Println(constants.ErrJsonMarshal + err.Error())
+			http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 			return
 		}
 
 		_, err = w.Write(marshaledSiteMap)
 		if err != nil {
-			log.Println("Failed to write response: " + err.Error())
-			http.Error(w, "Failed to write response", http.StatusInternalServerError)
+			log.Println(constants.ErrWriteResponse + err.Error())
+			http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		}
 	}
 }
