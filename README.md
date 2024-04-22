@@ -269,10 +269,6 @@ Body (exemplary code):
 Note that the request neither contains ID in the body (only in the URL), and neither contains the timestamp. The
 timestamp should be generated on the server side.
 
-TODO: Implement/remove this
-
-**Advanced Task:** Implement the `PATCH` method functionality.
-
 ##### Response
 
 This is the response to the change request.
@@ -441,9 +437,8 @@ Path: /dashboard/v1/notifications/{id}
 
 ##### Response
 
-TODO: Implement and update this
-
-Implement the response according to best practices.
+* Content type: `application/json`
+* Status code: No content (204) if successful, appropriate error code otherwise.
 
 #### View specific registered webhook
 
@@ -540,10 +535,6 @@ Body (Exemplary message based on schema):
 }
 ```
 
-TODO: Implement/remove this
-
-* **Advanced Task:** Consider supporting other event types you can think of.
-
 ---
 
 ### Status
@@ -581,11 +572,6 @@ Body:
 }
 ```
 
-TODO: Implement/remove this
-
-Note: `<some value>` indicates placeholders for values to be populated by the service as described for the corresponding
-values. Feel free to extend the output with information you deem useful to assess the status of your service.
-
 ---
 
 ## Configuration
@@ -617,6 +603,8 @@ The service can be deployed using the following command:
 ```bash
 docker compose up -d --build
 ```
+
+It is currently (as of 22.04.2024) deployed on a OpenStack on the IP: `http://10.212.173.25:8000/`.
 
 ### Logs
 
