@@ -60,8 +60,6 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	log.Printf("Received request to get registration with ID %s\n", id)
-
 	// Get the registration with the provided ID
 	dashboard, err2 := db.GetDocument[requests.DashboardConfig](
 		id,
@@ -69,16 +67,18 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 	)
 	if err2 != nil {
 		switch err2.Error() {
-		case "no valid ID was provided":
-			http.Error(w, "No valid ID was provided", http.StatusBadRequest)
-		case "document not found in collection":
-			http.Error(w, "Document not found in collection", http.StatusNoContent)
+		case constants.ErrIDInvalid:
+			http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)
+		case constants.ErrDBDocNotFound:
+			http.Error(w, constants.ErrDBDocNotFound, http.StatusNoContent)
 		default:
 			http.Error(
-				w, "Error while trying to receive document from db.", http.StatusInternalServerError,
+				w,
+				constants.ErrDBGetDoc,
+				http.StatusInternalServerError,
 			)
 		}
-		log.Println("Error while trying to receive document from db: ", err2.Error())
+		log.Println(constants.ErrDBGetDoc + err2.Error())
 		return
 	}
 
@@ -89,16 +89,16 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 		"\t",
 	)
 	if err3 != nil {
-		log.Println("Error during JSON encoding: " + err3.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		log.Println(constants.ErrJsonMarshal + err3.Error())
+		http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 		return
 	}
 
 	// Write the JSON to the response
 	_, err4 := w.Write(marshaled)
 	if err4 != nil {
-		log.Println("Failed to write response: " + err4.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		log.Println(constants.ErrWriteResponse + err4.Error())
+		http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		return
 	}
 }
@@ -114,15 +114,13 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&update); err != nil {
-		log.Println("Error while decoding json: ", err.Error())
-		http.Error(w, "Error while decoding json.", http.StatusBadRequest)
+		log.Println(constants.ErrJsonDecode + err.Error())
+		http.Error(w, constants.ErrJsonDecode, http.StatusBadRequest)
 		return
 	}
 
 	update.ID = id
 	update.LastChange = time.Now()
-
-	log.Println("Received request to update registration with ID ", id)
 
 	err3 := db.UpdateDocument[requests.DashboardConfig](
 		update, id,
@@ -133,10 +131,13 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Check if any notifications are registered for the event
-	foundNotifications, err4 := notifications.FindNotificationsByCountry(requests.EventChange, update.IsoCode)
+	foundNotifications, err4 := notifications.FindNotificationsByCountry(
+		requests.EventChange,
+		update.IsoCode,
+	)
 	if err4 != nil {
-		log.Println("Error while trying to find notifications: ", err4.Error())
-		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		log.Println(constants.ErrNotificationsGetDocFromDB, err4.Error())
+		http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
 		return
 	}
 
@@ -164,20 +165,20 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 	)
 	if err3 != nil {
 		switch err3.Error() {
-		case "no valid ID was provided":
-			http.Error(w, "No valid ID was provided", http.StatusBadRequest)
-		case "document not found in collection":
-			http.Error(w, "Document not found in collection", http.StatusNoContent)
+		case constants.ErrIDInvalid:
+			http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)
+		case constants.ErrDBDocNotFound:
+			http.Error(w, constants.ErrDBDocNotFound, http.StatusNoContent)
 		default:
 			http.Error(
-				w, "Error while trying to receive document from db.", http.StatusInternalServerError,
+				w,
+				constants.ErrDBGetDoc,
+				http.StatusInternalServerError,
 			)
 		}
-		log.Println("Error while trying to receive document from db: ", err3.Error())
+		log.Println(constants.ErrDBGetDoc + err3.Error())
 		return
 	}
-
-	log.Println("Received request to delete registration with ID ", id)
 
 	err2 := db.DeleteDocument(id, db.DashboardCollection)
 	if err2 != nil {
@@ -186,10 +187,13 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Check if any notifications are registered for the event
-	foundNotifications, err4 := notifications.FindNotificationsByCountry(requests.EventDelete, dashboard.IsoCode)
+	foundNotifications, err4 := notifications.FindNotificationsByCountry(
+		requests.EventDelete,
+		dashboard.IsoCode,
+	)
 	if err4 != nil {
-		log.Println("Error while trying to find notifications: ", err4.Error())
-		http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+		log.Println(constants.ErrNotificationsGetDocFromDB, err4.Error())
+		http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
 		return
 	}
 

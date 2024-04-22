@@ -57,7 +57,7 @@ func TestHandlerWithoutID(t *testing.T) {
 		{
 			name:       "PositiveTestRegistrationHandlerWithoutID",
 			method:     http.MethodGet,
-			statusCode: http.StatusOK,
+			statusCode: http.StatusNoContent,
 		},
 	}
 
@@ -104,7 +104,7 @@ func Test_handleRegistrationsGetRequest(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(http.MethodGet, "/", nil),
 			},
-			wantedStatus: http.StatusOK,
+			wantedStatus: http.StatusNoContent,
 		},
 	}
 	for _, tt := range tests {
@@ -174,7 +174,7 @@ func Test_handleRegistrationsPostRequest(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(http.MethodPost, "/", bytes.NewBuffer(jsonTestRegistration)),
 			},
-			wantedStatus: http.StatusOK,
+			wantedStatus: http.StatusCreated,
 		},
 		{
 			name: "PostInvalidRequest",

@@ -61,10 +61,7 @@ func Start() {
 	// Notifications with ID
 	mux.HandleFunc(constants.NotificationsPath+"{id}", notifications.HandlerWithID)
 
-	fs := http.FileServer(http.Dir("web"))
-	mux.Handle("/web/", http.StripPrefix("/web/", fs))
-
-	// Default, redirect to /web/
+	// Default
 	mux.HandleFunc("/", handlers.DefaultHandler)
 
 	// Start server

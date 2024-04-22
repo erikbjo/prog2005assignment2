@@ -269,10 +269,6 @@ Body (exemplary code):
 Note that the request neither contains ID in the body (only in the URL), and neither contains the timestamp. The
 timestamp should be generated on the server side.
 
-TODO: Implement/remove this
-
-**Advanced Task:** Implement the `PATCH` method functionality.
-
 ##### Response
 
 This is the response to the change request.
@@ -441,9 +437,8 @@ Path: /dashboard/v1/notifications/{id}
 
 ##### Response
 
-TODO: Implement and update this
-
-Implement the response according to best practices.
+* Content type: `application/json`
+* Status code: No content (204) if successful, appropriate error code otherwise.
 
 #### View specific registered webhook
 
@@ -540,10 +535,6 @@ Body (Exemplary message based on schema):
 }
 ```
 
-TODO: Implement/remove this
-
-* **Advanced Task:** Consider supporting other event types you can think of.
-
 ---
 
 ### Status
@@ -581,11 +572,6 @@ Body:
 }
 ```
 
-TODO: Implement/remove this
-
-Note: `<some value>` indicates placeholders for values to be populated by the service as described for the corresponding
-values. Feel free to extend the output with information you deem useful to assess the status of your service.
-
 ---
 
 ## Configuration
@@ -594,6 +580,7 @@ The service can be configured using the following environment variables:
 
 ```dotenv
 PORT=
+TEST_PORT=
 TYPE=
 PROJECTID=
 PRIVATEKEYID=
@@ -617,25 +604,7 @@ The service can be deployed using the following command:
 docker compose up -d --build
 ```
 
-TODO: Implement/remove this
-
-```dockerfile
-# Install Node.js and npm for firebase
-RUN apt-get update
-RUN curl -sL https://deb.nodesource.com/setup_20.x -o /tmp/nodesource_setup.sh
-RUN bash /tmp/nodesource_setup.sh
-RUN apt-get install -y nodejs
-
-# Java
-RUN apt install default-jre -y
-RUN apt install default-jdk -y
-
-# Sleep for 5 seconds to let the installation finish
-#RUN sleep 5
-
-# Install firebase for testing
-RUN npm install -g firebase-tools
-```
+It is currently (as of 22.04.2024) deployed on a OpenStack on the IP: `http://10.212.173.25:8000/`.
 
 ### Logs
 
@@ -661,7 +630,7 @@ See coverage report for information about test coverage.
 This command was used to generate the coverage report:
 
 ```bash
-clear; go clean -testcache; go test ./... -coverprofile=coverage.out; go tool cover -html=coverage.out -o coverage.html; rm coverage.out
+clear; go clean -testcache; ./run_tests.sh; go tool cover -html=coverage.out -o coverage.html; rm coverage.out
 ```
 
 External services are mocked in the tests, so no external services are required to run the tests.
@@ -677,7 +646,12 @@ open coverage.html
 
 ## Known issues
 
+The tests fails unless firebase is set up. This is because the tests require the firestore emulator to be running.
+
 ## Future work
+
+Input validation is not thoroughly implemented in the service. This should be implemented to ensure that the service is robust and
+secure.
 
 ## Contact
 

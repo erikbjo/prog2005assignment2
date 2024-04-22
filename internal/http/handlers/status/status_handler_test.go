@@ -225,15 +225,6 @@ func Test_handleStatusGetRequest(t *testing.T) {
 					)
 				}
 
-				// TODO: Implement counting of webhooks
-				if status.Webhooks != http.StatusNotImplemented {
-					t.Errorf(
-						"handleStatusGetRequest() = %v, want %v",
-						status.Webhooks,
-						http.StatusNotImplemented,
-					)
-				}
-
 			},
 		)
 	}

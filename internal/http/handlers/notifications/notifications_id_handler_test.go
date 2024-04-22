@@ -72,7 +72,7 @@ func Test_handleNotificationsDeleteRequestWithID(t *testing.T) {
 					nil,
 				),
 			},
-			wantedStatus: http.StatusOK,
+			wantedStatus: http.StatusNoContent,
 		},
 		{
 			name: "NegativeDeleteRequestWithID",
@@ -132,12 +132,12 @@ func Test_handleNotificationsGetRequestWithID(t *testing.T) {
 				w: httptest.NewRecorder(),
 				r: httptest.NewRequest(
 					http.MethodGet,
-					constants.NotificationsPath+"?id=invalidID",
+					constants.NotificationsPath+"?id=",
 					nil,
 				),
 			},
 			// Should maybe be bad request, but the db function returns internal server error
-			wantedStatus: http.StatusInternalServerError,
+			wantedStatus: http.StatusBadRequest,
 		},
 	}
 	for _, tt := range tests {

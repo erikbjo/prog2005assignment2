@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"assignment-2/internal/constants"
 	"assignment-2/internal/db"
 	"assignment-2/internal/http/datatransfers/inhouse"
 	"assignment-2/internal/http/datatransfers/requests"
@@ -29,12 +30,12 @@ func FindNotifications(event string) ([]requests.Notification, error) {
 	var foundNotifications []requests.Notification
 
 	if !isValidEvent(event) {
-		return nil, fmt.Errorf("invalid event type: %v", event)
+		return nil, fmt.Errorf(constants.ErrNotificationsInvalidType)
 	}
 
 	notifications, err := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
 	if err != nil {
-		log.Println("Error while trying to receive notification from db: ", err.Error())
+		log.Println(constants.ErrNotificationsGetDocFromDB, err.Error())
 		return nil, err
 	}
 
@@ -58,7 +59,7 @@ func FindNotificationsByCountry(event string, country string) ([]requests.Notifi
 
 	notifications, err := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
 	if err != nil {
-		log.Println("Error while trying to receive notification from db: ", err.Error())
+		log.Println(constants.ErrNotificationsGetDocFromDB, err.Error())
 		return nil, err
 	}
 
@@ -82,7 +83,7 @@ func InvokeNotification(notification requests.Notification) {
 		db.NotificationCollection,
 	)
 	if err != nil {
-		log.Println("Error while updating document: " + err.Error())
+		log.Println(constants.ErrDBUpdateDoc + err.Error())
 		return
 	}
 
@@ -93,14 +94,14 @@ func InvokeNotification(notification requests.Notification) {
 		"\t",
 	)
 	if err2 != nil {
-		log.Println("Error during JSON marshaling: " + err2.Error())
+		log.Println(constants.ErrJsonMarshal + err2.Error())
 		return
 	}
 
 	reader := bytes.NewReader(marshaled)
 	r, err3 := http.NewRequest(http.MethodPost, notification.Url, reader)
 	if err3 != nil {
-		log.Println("Error while creating request: " + err3.Error())
+		log.Println(constants.ErrExternalRequest + err3.Error())
 		return
 	}
 
@@ -109,7 +110,7 @@ func InvokeNotification(notification requests.Notification) {
 
 	_, err4 := utils.Client.Do(r)
 	if err4 != nil {
-		log.Println("Error while sending request: " + err4.Error())
+		log.Println(constants.ErrExternalRequest + err4.Error())
 		return
 	}
 }

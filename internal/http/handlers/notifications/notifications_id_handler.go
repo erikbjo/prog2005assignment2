@@ -51,11 +51,9 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) {
 func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request) {
 	id, err := utils.GetIDFromRequest(r)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)
 		return
 	}
-
-	log.Printf("Received request to get notification with ID %s\n", id)
 
 	// Get the notification with the provided ID
 	notification, err2 := db.GetDocument[requests.Notification](
@@ -64,16 +62,19 @@ func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 	)
 	if err2 != nil {
 		switch err2.Error() {
-		case "no valid ID was provided":
-			http.Error(w, "No valid ID was provided", http.StatusBadRequest)
-		case "document not found in collection":
-			http.Error(w, "Document not found in collection", http.StatusNoContent)
+		case constants.ErrIDInvalid:
+			http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)
+		case constants.ErrDBDocNotFound:
+			http.Error(w, constants.ErrDBDocNotFound, http.StatusNoContent)
 		default:
 			http.Error(
-				w, "Error while trying to receive document from db.", http.StatusInternalServerError,
+				w,
+				constants.ErrDBGetDoc,
+				http.StatusInternalServerError,
 			)
 		}
-		log.Println("Error while trying to receive document from db: ", err2.Error())
+
+		log.Println(constants.ErrDBGetDoc + err2.Error())
 		return
 	}
 
@@ -84,16 +85,16 @@ func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
 		"\t",
 	)
 	if err3 != nil {
-		log.Println("Error during JSON encoding: " + err3.Error())
-		http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+		log.Println(constants.ErrJsonMarshal + err3.Error())
+		http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
 		return
 	}
 
 	// Write the JSON to the response
 	_, err4 := w.Write(marshaled)
 	if err4 != nil {
-		log.Println("Failed to write response: " + err4.Error())
-		http.Error(w, "Failed to write response", http.StatusInternalServerError)
+		log.Println(constants.ErrWriteResponse + err4.Error())
+		http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
 		return
 	}
 }
@@ -104,8 +105,6 @@ func handleNotificationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	log.Println("Received request to delete notification with ID ", id)
 
 	err2 := db.DeleteDocument(id, db.NotificationCollection)
 	if err2 != nil {

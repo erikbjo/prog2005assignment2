@@ -59,25 +59,25 @@
 				
 				<option value="file1">assignment-2/internal/config/config.go (0.0%)</option>
 				
-				<option value="file2">assignment-2/internal/datasources/firebase/db.go (64.6%)</option>
+				<option value="file2">assignment-2/internal/db/db.go (59.2%)</option>
 				
-				<option value="file3">assignment-2/internal/http/handlers/dashboards/dashboards_handler.go (49.7%)</option>
+				<option value="file3">assignment-2/internal/http/handlers/dashboards/dashboards_handler.go (46.9%)</option>
 				
 				<option value="file4">assignment-2/internal/http/handlers/default_handler.go (0.0%)</option>
 				
-				<option value="file5">assignment-2/internal/http/handlers/notifications/notifications_handler.go (63.0%)</option>
+				<option value="file5">assignment-2/internal/http/handlers/notifications/notifications_handler.go (63.3%)</option>
 				
-				<option value="file6">assignment-2/internal/http/handlers/notifications/notifications_id_handler.go (74.3%)</option>
+				<option value="file6">assignment-2/internal/http/handlers/notifications/notifications_id_handler.go (59.5%)</option>
 				
-				<option value="file7">assignment-2/internal/http/handlers/notifications/notifications_shared.go (69.0%)</option>
+				<option value="file7">assignment-2/internal/http/handlers/notifications/notifications_shared.go (69.8%)</option>
 				
-				<option value="file8">assignment-2/internal/http/handlers/registrations/registrations_handler.go (59.7%)</option>
+				<option value="file8">assignment-2/internal/http/handlers/registrations/registrations_handler.go (55.1%)</option>
 				
-				<option value="file9">assignment-2/internal/http/handlers/registrations/registrations_id_handler.go (77.4%)</option>
+				<option value="file9">assignment-2/internal/http/handlers/registrations/registrations_id_handler.go (56.4%)</option>
 				
 				<option value="file10">assignment-2/internal/http/handlers/registrations/registrations_shared.go (0.0%)</option>
 				
-				<option value="file11">assignment-2/internal/http/handlers/status/status_handler.go (68.0%)</option>
+				<option value="file11">assignment-2/internal/http/handlers/status/status_handler.go (63.6%)</option>
 				
 				<option value="file12">assignment-2/internal/http/server/server.go (0.0%)</option>
 				
@@ -134,6 +134,7 @@ func main() <span class="cov0" title="0">{
 		<pre class="file" id="file1" style="display: none">package config
 
 import (
+        "assignment-2/internal/constants"
         "github.com/joho/godotenv"
         "log"
 )
@@ -142,7 +143,7 @@ func InitConfig() error <span class="cov0" title="0">{
         // Load environment variables from .env file
         err := godotenv.Load(".env")
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error loading .env file")
+                log.Println(constants.ErrLoadingEnvFile + err.Error())
                 return err
         }</span>
 
@@ -150,12 +151,15 @@ func InitConfig() error <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package firebase
+		<pre class="file" id="file2" style="display: none">package db
 
 import (
+        "assignment-2/internal/constants"
         "assignment-2/internal/utils"
         "cloud.google.com/go/firestore" // Firestore-specific support
-        "context"                       // State handling across API boundaries; part of native GoLang API
+        "cloud.google.com/go/firestore/apiv1/firestorepb"
+        "context" // State handling across API boundaries; part of native GoLang API
+        "encoding/json"
         "errors"
         firebase "firebase.google.com/go" // Generic firebase support
         "fmt"
@@ -177,7 +181,6 @@ var client *firestore.Client
 
 // Collection names in Firestore
 const (
-        firebaseAuth           = "./serviceAccountKey.json"
         DashboardCollection    = "dashboards"
         NotificationCollection = "notifications"
 )
@@ -187,12 +190,24 @@ type dummyStruct struct {
         ID    string
 }
 
-func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int <span class="cov8" title="1">{
+type serviceAccountKey struct {
+        Type                    string `json:"type"`
+        ProjectID               string `json:"project_id"`
+        PrivateKeyID            string `json:"private_key_id"`
+        PrivateKey              string `json:"private_key"`
+        ClientEmail             string `json:"client_email"`
+        ClientID                string `json:"client_id"`
+        AuthURI                 string `json:"auth_uri"`
+        TokenURI                string `json:"token_uri"`
+        AuthProviderX509CertURL string `json:"auth_provider_x509_cert_url"`
+        ClientX509CertURL       string `json:"client_x509_cert_url"`
+        UniverseDomain          string `json:"universe_domain"`
+}
+
+func GetStatusCodeOfCollection(collection string) int <span class="cov8" title="1">{
         // Check if the Firestore client is initialized
         if client == nil </span><span class="cov0" title="0">{
-                // If client is nil, return 503 Service Unavailable status code
-                // http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
-                log.Println("Firestore client is not initialized")
+                log.Println(constants.ErrFirestoreClientNotInit)
                 return http.StatusServiceUnavailable
         }</span>
 
@@ -203,17 +218,14 @@ func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int <sp
                 collection,
         )
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to add dummy document to the collection: ", err.Error())
+                log.Println(constants.ErrDBAddDoc, err)
                 return http.StatusServiceUnavailable
         }</span>
 
         <span class="cov8" title="1">defer func() </span><span class="cov8" title="1">{
                 err := DeleteDocument(id, collection)
                 if err != nil </span><span class="cov0" title="0">{
-                        log.Println(
-                                "Error while trying to delete dummy document from the collection: ",
-                                err.Error(),
-                        )
+                        log.Println(constants.ErrDBDeleteDoc, err)
                 }</span>
         }()
 
@@ -225,11 +237,7 @@ func GetStatusCodeOfCollection(w http.ResponseWriter, collection string) int <sp
         _, err = iter.Next()
         if err != nil </span><span class="cov0" title="0">{
                 // If there's an error connecting to the database, return 503 Service Unavailable status code
-                // http.Error(w, "Database unavailable", http.StatusServiceUnavailable)
-                log.Println(
-                        "Error while trying to retrieve the dummy document from the collection: ",
-                        err.Error(),
-                )
+                log.Println(constants.ErrDBGetDoc, err)
                 return http.StatusServiceUnavailable
         }</span>
 
@@ -248,7 +256,7 @@ func AddDocument[T any](
         // Assert type to target struct
         target, ok := data.(T)
         if !ok </span><span class="cov0" title="0">{
-                return fmt.Errorf("data does not match target struct")
+                return fmt.Errorf(constants.ErrDataNotMatchingTargetStruct)
         }</span>
 
         // Add document to Firestore
@@ -274,7 +282,7 @@ func GetDocument[T any](
 
                 // Extract individual document
                 doc, err2 := getDocumentByID(id, collection)
-                if err2 != nil </span><span class="cov8" title="1">{
+                if err2 != nil </span><span class="cov0" title="0">{
                         log.Println("Error extracting body of returned document" + id)
                         return data, err2
                 }</span>
@@ -285,8 +293,8 @@ func GetDocument[T any](
                 }</span>
                 // A document map with string keys
         } else<span class="cov8" title="1"> {
-                log.Println("No valid ID was provided")
-                return data, fmt.Errorf("no valid ID was provided")
+                log.Println(constants.ErrIDInvalid)
+                return data, fmt.Errorf(constants.ErrIDInvalid)
         }</span>
         <span class="cov8" title="1">return data, nil</span>
 }
@@ -431,6 +439,27 @@ func documentExists(ctx context.Context, collection, documentID string) (bool, e
 }
 
 /*
+NumOfDocumentsInCollection Returns the number of documents in the collection.
+*/
+func NumOfDocumentsInCollection(collection string) (int, error) <span class="cov8" title="1">{
+        result, err := client.Collection(collection).NewAggregationQuery().WithCount("all").Get(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("firestore: error while trying to get count of documents in collection")
+                return -1, fmt.Errorf("firestore: error while trying to get count of documents in collection")
+        }</span>
+
+        <span class="cov8" title="1">count, ok := result["all"]
+        if !ok </span><span class="cov0" title="0">{
+                log.Println("firestore: couldn't get alias for COUNT from results")
+                return -1, fmt.Errorf("firestore: couldn't get alias for COUNT from results")
+        }</span>
+
+        <span class="cov8" title="1">countValue := count.(*firestorepb.Value)
+
+        return int(countValue.GetIntegerValue()), nil</span>
+}
+
+/*
 getDocumentByID Retrieves a document with the provided ID from the collection.
 */
 func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot, error) <span class="cov8" title="1">{
@@ -439,9 +468,9 @@ func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot,
 
         // Get the first document from the query iterator
         docSnap, err := iter.Next()
-        if err != nil </span><span class="cov8" title="1">{
-                if errors.Is(err, iterator.Done) </span><span class="cov8" title="1">{
-                        return nil, fmt.Errorf("document with ID %s not found in collection %s", id, collection)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, iterator.Done) </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf(constants.ErrDBDocNotFound)
                 }</span>
                 <span class="cov0" title="0">return nil, err</span>
         }
@@ -450,15 +479,15 @@ func getDocumentByID(id string, collection string) (*firestore.DocumentSnapshot,
 }
 
 func InitializeForTesting() <span class="cov8" title="1">{
+        log.Println("Initializing Firestore client for testing, be sure to have the Firestore emulator running")
+
         // Set the Firestore emulator host
         err := os.Setenv(
                 "FIRESTORE_EMULATOR_HOST",
                 "localhost:8080",
         ) // Default port for Firestore emulator
         if err != nil </span><span class="cov0" title="0">{
-                log.Fatalf("Failed to set Firestore emulator host: %v", err)
-        }</span> else<span class="cov8" title="1"> {
-                log.Println("Firestore emulator host set successfully")
+                log.Fatal(constants.ErrFirestoreEmulatorEnv, err)
         }</span>
 
         // Initialize Firestore client
@@ -470,12 +499,12 @@ func InitializeForTesting() <span class="cov8" title="1">{
                 option.WithoutAuthentication(),
         )
         if err != nil </span><span class="cov0" title="0">{
-                log.Fatalf("Failed to create Firestore app: %v", err)
+                log.Fatal(constants.ErrFirestoreApp, err)
         }</span>
 
         <span class="cov8" title="1">firestoreClient, err := app.Firestore(ctx)
         if err != nil </span><span class="cov0" title="0">{
-                log.Fatalf("Failed to create Firestore client: %v", err)
+                log.Fatal(constants.ErrFirestoreClient, err)
         }</span>
 
         // Assign the client to your package-level variable for Firestore client
@@ -491,27 +520,46 @@ func Initialize() <span class="cov0" title="0">{
         // Firebase initialization
         ctx = context.Background()
 
-        // We use a service account, load credentials file that you downloaded from your project's settings menu.
-        // It should reside in your project directory.
-        // Make sure this file is git-ignored, since it is the access token to the database.
-        sa := option.WithCredentialsFile(firebaseAuth)
+        // Define a struct to hold the parsed JSON data
+        key := serviceAccountKey{
+                Type:                    os.Getenv("TYPE"),
+                ProjectID:               os.Getenv("PROJECTID"),
+                PrivateKeyID:            os.Getenv("PRIVATEKEYID"),
+                PrivateKey:              os.Getenv("PRIVATEKEY"),
+                ClientEmail:             os.Getenv("CLIENTEMAIL"),
+                ClientID:                os.Getenv("CLIENTID"),
+                AuthURI:                 os.Getenv("AUTHURI"),
+                TokenURI:                os.Getenv("TOKENURI"),
+                AuthProviderX509CertURL: os.Getenv("AUTHPROVIDERX509CERTURL"),
+                ClientX509CertURL:       os.Getenv("CLIENTX509CERTURL"),
+                UniverseDomain:          os.Getenv("UNIVERSEDOMAIN"),
+        }
+
+        // Marshal the struct into a JSON byte slice
+        jsonKey, err := json.Marshal(key)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Println("Failed to marshal service account key: ", err)
+                return
+        }</span>
+
+        // Create credentials option from the struct
+        <span class="cov0" title="0">sa := option.WithCredentialsJSON(jsonKey)
+
         app, err := firebase.NewApp(ctx, nil, sa)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to create Firebase app: ", err)
+                log.Fatal(constants.ErrFirestoreApp, err)
                 return
         }</span>
 
         // Instantiate client
         <span class="cov0" title="0">client, err = app.Firestore(ctx)
 
-        // Alternative setup, directly through Firestore (without initial reference to Firebase); but requires Project ID; useful if multiple projects are used
-        // client, err := firestore.NewClient(ctx, projectID)
-
         // Check whether there is an error when connecting to Firestore
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to create Firestore client: ", err)
+                log.Fatal(constants.ErrFirestoreClient, err)
                 return
         }</span>
+
         <span class="cov0" title="0">log.Println("Firestore client initialized normally")</span>
 }
 
@@ -521,7 +569,7 @@ Close Closes the Firestore client.
 func Close() <span class="cov0" title="0">{
         errClose := client.Close()
         if errClose != nil </span><span class="cov0" title="0">{
-                log.Fatal("Closing of the Firebase client failed. Error:", errClose)
+                log.Fatal(constants.ErrFirestoreClose, errClose)
         }</span>
 }
 </pre>
@@ -530,10 +578,11 @@ func Close() <span class="cov0" title="0">{
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/datatransfers/requests"
         "assignment-2/internal/http/datatransfers/responses"
+        "assignment-2/internal/http/handlers/notifications"
         utils2 "assignment-2/internal/utils"
         "dario.cat/mergo"
         "encoding/json"
@@ -570,7 +619,7 @@ var implementedMethods = []string{
 
 // Endpoint for managing dashboards
 var dashboardsEndpoint = inhouse.Endpoint{
-        Path:        constants.DashboardsPath,
+        Path:        constants.DashboardsPath + "{id}",
         Methods:     implementedMethods,
         Description: "Endpoint for managing dashboards.",
 }
@@ -607,15 +656,15 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" ti
 func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         id, err := utils2.GetIDFromRequest(r)
 
-        dashboardConfig, err := firebase.GetDocument[requests.DashboardConfig](
+        dashboardConfig, err := db.GetDocument[requests.DashboardConfig](
                 id,
-                firebase.DashboardCollection,
+                db.DashboardCollection,
         )
         if err != nil </span><span class="cov8" title="1">{
-                log.Println("Error while trying to display dashboard document: ", err.Error())
+                log.Println(constants.ErrDBGetDoc + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to display dashboard document",
+                        constants.ErrDBGetDoc,
                         http.StatusInternalServerError,
                 )
                 return
@@ -630,10 +679,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
         var features dashboardFeatures
         countryFeatures, err := getCountryData(dashboardConfig.IsoCode)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to get country data: ", err.Error())
+                log.Println(constants.ErrDashboardGetCountryData + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to get country data.",
+                        constants.ErrDashboardGetCountryData,
                         http.StatusInternalServerError,
                 )
                 return
@@ -642,10 +691,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
         // Merge the features
         <span class="cov0" title="0">err = mergo.Merge(&amp;features, countryFeatures, mergo.WithOverride, mergo.WithoutDereference)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to merge country features: ", err.Error())
+                log.Println(constants.ErrDashboardMergingData + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to merge country features.",
+                        constants.ErrDashboardMergingData,
                         http.StatusInternalServerError,
                 )
                 return
@@ -654,10 +703,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
         // Get the meteo features
         <span class="cov0" title="0">meteoFeatures, err := getMeteoData(features.Coordinates)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to get meteo data: ", err.Error())
+                log.Println(constants.ErrDashboardGetWeatherData + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to get meteo data.",
+                        constants.ErrDashboardGetWeatherData,
                         http.StatusInternalServerError,
                 )
                 return
@@ -666,10 +715,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
         // Merge the features
         <span class="cov0" title="0">err = mergo.Merge(&amp;features, meteoFeatures, mergo.WithOverride, mergo.WithoutDereference)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to merge meteo features: ", err.Error())
+                log.Println(constants.ErrDashboardMergingData + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to merge meteo features.",
+                        constants.ErrDashboardMergingData,
                         http.StatusInternalServerError,
                 )
                 return
@@ -681,10 +730,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
                 countryFeatures.Currency,
         )
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to get currency rates: ", err.Error())
+                log.Println(constants.ErrDashboardGetCurrencyData + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to get currency rates.",
+                        constants.ErrDashboardGetCurrencyData,
                         http.StatusInternalServerError,
                 )
                 return
@@ -693,10 +742,10 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
         // Merge the features
         <span class="cov0" title="0">err = mergo.Merge(&amp;features, currencyFeatures, mergo.WithOverride, mergo.WithoutDereference)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to merge currency features: ", err.Error())
+                log.Println(constants.ErrDashboardMergingData + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to merge currency features.",
+                        constants.ErrDashboardMergingData,
                         http.StatusInternalServerError,
                 )
                 return
@@ -709,14 +758,32 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
         // Filter the response by the config
         filteredResponse, err := filterDashboardByConfig(response, dashboardConfig)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to filter dashboard features: ", err.Error())
+                log.Println(constants.ErrDashboardFilterByRegistration + err.Error())
                 http.Error(
                         w,
-                        "Error while trying to filter dashboard features.",
+                        constants.ErrDashboardFilterByRegistration,
                         http.StatusInternalServerError,
                 )
                 return
         }</span>
+
+        // Check if any notifications are registered for the event
+        <span class="cov0" title="0">foundNotifications, err4 := notifications.FindNotificationsByCountry(
+                requests.EventInvoke,
+                filteredResponse.IsoCode,
+        )
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println(constants.ErrNotificationsGetDocFromDB, err4.Error())
+                http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
+                return
+        }</span>
+
+        // If found, invoke the notifications
+        <span class="cov0" title="0">if len(foundNotifications) &gt; 0 </span><span class="cov0" title="0">{
+                for _, n := range foundNotifications </span><span class="cov0" title="0">{
+                        notifications.InvokeNotification(n)
+                }</span>
+        }
 
         // Marshal the status object to JSON
         <span class="cov0" title="0">marshaled, err := json.MarshalIndent(
@@ -725,16 +792,16 @@ func handleDashboardsGetRequest(w http.ResponseWriter, r *http.Request) <span cl
                 "\t",
         )
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
         // Write the JSON to the response
         <span class="cov0" title="0">_, err = w.Write(marshaled)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                log.Println(constants.ErrWriteResponse + err.Error())
+                http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 return
         }</span>
 }
@@ -752,8 +819,8 @@ func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) <
                 nil,
         )
         if err1 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in creating request:", err1.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in creating request")
+                log.Println(constants.ErrExternalRequest, err1.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalRequest)
         }</span>
 
         <span class="cov8" title="1">r.Header.Add("content-type", "application/json")
@@ -761,16 +828,16 @@ func getMeteoData(coordinates *inhouse.Coordinates) (dashboardFeatures, error) <
         // Issue request
         res, err2 := utils2.Client.Do(r)
         if err2 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in response:", err2.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in response")
+                log.Println(constants.ErrExternalResponse, err2.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalResponse)
         }</span>
 
         // Decode JSON
         <span class="cov8" title="1">var meteo responses.MeteoForecastResponse
         err3 := json.NewDecoder(res.Body).Decode(&amp;meteo)
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in decoding JSON:", err3.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+                log.Println(constants.ErrJsonDecode, err3.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrJsonDecode)
         }</span>
 
         // Gets the average of all hourly temperatures and rounds to 5 decimal points
@@ -795,32 +862,30 @@ func getCountryData(isoCode string) (dashboardFeatures, error) <span class="cov8
                 nil,
         )
         if err1 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in creating request:", err1.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in creating request")
+                log.Println(constants.ErrExternalRequest, err1.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalRequest)
         }</span>
 
-        <span class="cov8" title="1">log.Println("Request url: ", r.URL)
-
-        r.Header.Add("content-type", "application/json")
+        <span class="cov8" title="1">r.Header.Add("content-type", "application/json")
 
         // Issue request
         res, err2 := utils2.Client.Do(r)
         if err2 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in response:", err2.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in response")
+                log.Println(constants.ErrExternalResponse, err2.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalResponse)
         }</span>
 
         // Decode JSON
         <span class="cov8" title="1">var country responses.ResponseFromRestcountries
         err3 := json.NewDecoder(res.Body).Decode(&amp;country)
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in decoding JSON:", err3.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+                log.Println(constants.ErrJsonDecode, err3.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrJsonDecode)
         }</span>
 
         <span class="cov8" title="1">if country.Name.Common == "" </span><span class="cov0" title="0">{
-                log.Println("Country not found")
-                return dashboardFeatures{}, fmt.Errorf("country not found")
+                log.Println(constants.ErrDashboardCountryNotFound)
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrDashboardCountryNotFound)
         }</span>
 
         <span class="cov8" title="1">lat := country.Latlng[0]
@@ -867,34 +932,32 @@ func getCurrencyData(
                 nil,
         )
         if err1 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in creating request:", err1.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in creating request")
+                log.Println(constants.ErrExternalRequest, err1.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalRequest)
         }</span>
 
         <span class="cov8" title="1">r.Header.Add("content-type", "application/json")
-        log.Println("Request: ", r)
 
         // Issue request
         res, err2 := utils2.Client.Do(r)
         if err2 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in response:", err2.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in response")
+                log.Println(constants.ErrExternalResponse, err2.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrExternalResponse)
         }</span>
 
         // Decode JSON
         <span class="cov8" title="1">var response responses.ResponseFromCurrency
         err3 := json.NewDecoder(res.Body).Decode(&amp;response)
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error in decoding JSON:", err3.Error())
-                return dashboardFeatures{}, fmt.Errorf("error in decoding JSON")
+                log.Println(constants.ErrJsonDecode, err3.Error())
+                return dashboardFeatures{}, fmt.Errorf(constants.ErrJsonDecode)
         }</span>
 
         // Get the exchange rates for the target currencies
         <span class="cov8" title="1">for _, targetCurrency := range targetCurrencies </span><span class="cov8" title="1">{
                 if _, ok := response.Rates[targetCurrency]; !ok </span><span class="cov0" title="0">{
-                        log.Println("Exchange rate not found for currency: ", targetCurrency)
                         // Not returning error, just setting the rate to 0
-                        featuresFromCurrency.TargetCurrencies["targetCurrency"] = 0
+                        featuresFromCurrency.TargetCurrencies[targetCurrency] = 0
                 }</span> else<span class="cov8" title="1"> {
                         featuresFromCurrency.TargetCurrencies[targetCurrency] = response.Rates[targetCurrency]
                 }</span>
@@ -921,7 +984,7 @@ func filterDashboardByConfig(oldDashboard dashboard, config requests.DashboardCo
         error,
 ) <span class="cov8" title="1">{
         if config.Country != oldDashboard.Country </span><span class="cov0" title="0">{
-                return dashboard{}, fmt.Errorf("country does not match")
+                return dashboard{}, fmt.Errorf(constants.ErrDashboardCountryNotMatch)
         }</span>
         // Returns a new dashboard with the features filtered by the config
         <span class="cov8" title="1">newDashboard := dashboard{
@@ -964,6 +1027,7 @@ func filterDashboardByConfig(oldDashboard dashboard, config requests.DashboardCo
 		<pre class="file" id="file4" style="display: none">package handlers
 
 import (
+        "assignment-2/internal/constants"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/handlers/dashboards"
         "assignment-2/internal/http/handlers/notifications"
@@ -986,7 +1050,8 @@ type siteMap struct {
 var SiteMap = siteMap{
         Help: "This is the default handler for the server. " +
                 "Maybe you typed the wrong path or are looking for the web page. " +
-                "Go to '/' to read the README.md file.",
+                "Go to '/' to read the README.md file." +
+                "ID is required for endpoints with path ending in {id}.",
         Endpoints: []inhouse.Endpoint{},
 }
 
@@ -1035,22 +1100,22 @@ func DefaultHandler(w http.ResponseWriter, r *http.Request) <span class="cov0" t
                 // Write the HTML response
                 _, err = w.Write(htmlWithStyles)
                 if err != nil </span><span class="cov0" title="0">{
-                        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                        http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 }</span>
         } else<span class="cov0" title="0"> {
                 // Else, return the site map
                 w.Header().Set("content-type", "application/json")
                 marshaledSiteMap, err := json.MarshalIndent(SiteMap, "", "\t")
                 if err != nil </span><span class="cov0" title="0">{
-                        log.Println("Error during JSON encoding: " + err.Error())
-                        http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                        log.Println(constants.ErrJsonMarshal + err.Error())
+                        http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                         return
                 }</span>
 
                 <span class="cov0" title="0">_, err = w.Write(marshaledSiteMap)
                 if err != nil </span><span class="cov0" title="0">{
-                        log.Println("Failed to write response: " + err.Error())
-                        http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                        log.Println(constants.ErrWriteResponse + err.Error())
+                        http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 }</span>
         }
 }
@@ -1060,7 +1125,7 @@ func DefaultHandler(w http.ResponseWriter, r *http.Request) <span class="cov0" t
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/datatransfers/requests"
         "assignment-2/internal/utils"
@@ -1109,36 +1174,39 @@ func HandlerWithoutID(w http.ResponseWriter, r *http.Request) <span class="cov8"
 }
 
 func handleNotificationsGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        // Get the all notification documents
-        allDocuments, err2 := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+        // Get all notification documents from db
+        allDocuments, err2 := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
         if err2 != nil </span><span class="cov0" title="0">{
                 http.Error(
                         w,
-                        "Error while trying to receive document from db.",
+                        constants.ErrDBGetDoc,
                         http.StatusInternalServerError,
                 )
-                log.Println("Error while trying to receive document from db: ", err2.Error())
+                log.Println(constants.ErrDBGetDoc + err2.Error())
                 return
         }</span>
+        <span class="cov8" title="1">if len(allDocuments) &gt; 0 </span><span class="cov8" title="1">{
+                // Marshal the status object to JSON
+                marshaled, err3 := json.MarshalIndent(
+                        allDocuments,
+                        "",
+                        "\t",
+                )
+                if err3 != nil </span><span class="cov0" title="0">{
+                        log.Println(constants.ErrJsonMarshal + err3.Error())
+                        http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
+                        return
+                }</span>
 
-        // Marshal the status object to JSON
-        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
-                allDocuments,
-                "",
-                "\t",
-        )
-        if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err3.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
-                return
-        }</span>
-
-        // Write the JSON to the response
-        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
-        if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err4.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
-                return
+                // Write the JSON to the response
+                <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+                if err4 != nil </span><span class="cov0" title="0">{
+                        log.Println(constants.ErrWriteResponse + err4.Error())
+                        http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
+                        return
+                }</span>
+        } else<span class="cov0" title="0"> {
+                http.Error(w, constants.ErrDBNoDocs, http.StatusNoContent)
         }</span>
 }
 
@@ -1147,21 +1215,21 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) <spa
 
         decoder := json.NewDecoder(r.Body)
         if err := decoder.Decode(&amp;content); err != nil </span><span class="cov8" title="1">{
-                log.Println("Error while decoding json: ", err.Error())
+                log.Println(constants.ErrJsonDecode + err.Error())
         }</span>
 
         // Checks if event in body is isValid
         <span class="cov8" title="1">if isValidEvent(content.Event) == false </span><span class="cov8" title="1">{
-                http.Error(w, "Invalid event type provided", http.StatusBadRequest)
+                http.Error(w, constants.ErrNotificationsInvalidType, http.StatusBadRequest)
                 return
         }</span>
 
         <span class="cov8" title="1">content.ID = utils.GenerateRandomID()
 
         // Save the Notification to the database
-        err2 := firebase.AddDocument[requests.Notification](content, firebase.NotificationCollection)
+        err2 := db.AddDocument[requests.Notification](content, db.NotificationCollection)
         if err2 != nil </span><span class="cov0" title="0">{
-                http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+                http.Error(w, constants.ErrDBAddDoc, http.StatusInternalServerError)
         }</span>
 
         // Return the ID of the saved Notification
@@ -1172,16 +1240,18 @@ func handleNotificationsPostRequest(w http.ResponseWriter, r *http.Request) <spa
                 "\t",
         )
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err3.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err3.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
+        // Set the status code to 201 Created
+        <span class="cov8" title="1">w.WriteHeader(http.StatusCreated)
         // Write the JSON to the response
-        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
+        _, err4 := w.Write(marshaled)
         if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err4.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                log.Println(constants.ErrWriteResponse + err4.Error())
+                http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 return
         }</span>
 }
@@ -1203,7 +1273,7 @@ func isValidEvent(event string) bool <span class="cov8" title="1">{
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/datatransfers/requests"
         "assignment-2/internal/utils"
@@ -1252,26 +1322,32 @@ func HandlerWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" ti
 func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         id, err := utils.GetIDFromRequest(r)
         if err != nil </span><span class="cov8" title="1">{
-                http.Error(w, err.Error(), http.StatusBadRequest)
+                http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)
                 return
         }</span>
-
-        <span class="cov8" title="1">log.Printf("Received request to get notification with ID %s\n", id)
 
         // Get the notification with the provided ID
-        notification, err2 := firebase.GetDocument[requests.Notification](
+        <span class="cov8" title="1">notification, err2 := db.GetDocument[requests.Notification](
                 id,
-                firebase.NotificationCollection,
+                db.NotificationCollection,
         )
-        if err2 != nil </span><span class="cov8" title="1">{
-                http.Error(
-                        w,
-                        "Error while trying to receive document from db.",
-                        http.StatusInternalServerError,
-                )
-                log.Println("Error while trying to receive document from db: ", err2.Error())
-                return
-        }</span>
+        if err2 != nil </span><span class="cov0" title="0">{
+                switch err2.Error() </span>{
+                case constants.ErrIDInvalid:<span class="cov0" title="0">
+                        http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)</span>
+                case constants.ErrDBDocNotFound:<span class="cov0" title="0">
+                        http.Error(w, constants.ErrDBDocNotFound, http.StatusNoContent)</span>
+                default:<span class="cov0" title="0">
+                        http.Error(
+                                w,
+                                constants.ErrDBGetDoc,
+                                http.StatusInternalServerError,
+                        )</span>
+                }
+
+                <span class="cov0" title="0">log.Println(constants.ErrDBGetDoc + err2.Error())
+                return</span>
+        }
 
         // Marshal the status object to JSON
         <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
@@ -1280,16 +1356,16 @@ func handleNotificationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
                 "\t",
         )
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err3.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err3.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
         // Write the JSON to the response
         <span class="cov8" title="1">_, err4 := w.Write(marshaled)
         if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err4.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                log.Println(constants.ErrWriteResponse + err4.Error())
+                http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 return
         }</span>
 }
@@ -1301,20 +1377,21 @@ func handleNotificationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
                 return
         }</span>
 
-        <span class="cov8" title="1">log.Println("Received request to delete notification with ID ", id)
-
-        err2 := firebase.DeleteDocument(id, firebase.NotificationCollection)
+        <span class="cov8" title="1">err2 := db.DeleteDocument(id, db.NotificationCollection)
         if err2 != nil </span><span class="cov8" title="1">{
                 http.Error(w, err2.Error(), http.StatusInternalServerError)
                 return
         }</span>
+
+        <span class="cov8" title="1">w.WriteHeader(http.StatusNoContent)</span>
 }
 </pre>
 		
 		<pre class="file" id="file7" style="display: none">package notifications
 
 import (
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/constants"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/datatransfers/requests"
         "assignment-2/internal/utils"
@@ -1342,12 +1419,12 @@ func FindNotifications(event string) ([]requests.Notification, error) <span clas
         var foundNotifications []requests.Notification
 
         if !isValidEvent(event) </span><span class="cov8" title="1">{
-                return nil, fmt.Errorf("invalid event type: %v", event)
+                return nil, fmt.Errorf(constants.ErrNotificationsInvalidType)
         }</span>
 
-        <span class="cov8" title="1">notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+        <span class="cov8" title="1">notifications, err := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to receive notification from db: ", err.Error())
+                log.Println(constants.ErrNotificationsGetDocFromDB, err.Error())
                 return nil, err
         }</span>
 
@@ -1369,9 +1446,9 @@ func FindNotificationsByCountry(event string, country string) ([]requests.Notifi
                 return nil, fmt.Errorf("invalid event type: %v", event)
         }</span>
 
-        <span class="cov8" title="1">notifications, err := firebase.GetAllDocuments[requests.Notification](firebase.NotificationCollection)
+        <span class="cov8" title="1">notifications, err := db.GetAllDocuments[requests.Notification](db.NotificationCollection)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to receive notification from db: ", err.Error())
+                log.Println(constants.ErrNotificationsGetDocFromDB, err.Error())
                 return nil, err
         }</span>
 
@@ -1390,12 +1467,12 @@ func InvokeNotification(notification requests.Notification) <span class="cov8" t
         currentTime := time.Now()
         notification.LastInvoke = &amp;currentTime
 
-        err := firebase.UpdateDocument[requests.Notification](
+        err := db.UpdateDocument[requests.Notification](
                 notification, notification.ID,
-                firebase.NotificationCollection,
+                db.NotificationCollection,
         )
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error while updating document: " + err.Error())
+                log.Println(constants.ErrDBUpdateDoc + err.Error())
                 return
         }</span>
 
@@ -1406,19 +1483,23 @@ func InvokeNotification(notification requests.Notification) <span class="cov8" t
                 "\t",
         )
         if err2 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON marshaling: " + err2.Error())
+                log.Println(constants.ErrJsonMarshal + err2.Error())
                 return
         }</span>
 
         <span class="cov8" title="1">reader := bytes.NewReader(marshaled)
-        r, err3 := http.NewRequest(http.MethodGet, notification.Url, reader)
+        r, err3 := http.NewRequest(http.MethodPost, notification.Url, reader)
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error while creating request: " + err3.Error())
+                log.Println(constants.ErrExternalRequest + err3.Error())
                 return
         }</span>
-        <span class="cov8" title="1">_, err4 := utils.Client.Do(r)
+
+        // Sets header
+        <span class="cov8" title="1">r.Header.Set("Content-Type", "application/json")
+
+        _, err4 := utils.Client.Do(r)
         if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Error while sending request: " + err4.Error())
+                log.Println(constants.ErrExternalRequest + err4.Error())
                 return
         }</span>
 }
@@ -1428,7 +1509,7 @@ func InvokeNotification(notification requests.Notification) <span class="cov8" t
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/datatransfers/requests"
         "assignment-2/internal/http/handlers/notifications"
@@ -1455,7 +1536,9 @@ var registrationsEndpointWithoutID = inhouse.Endpoint{
         Description: "This endpoint is used to manage registrations.",
 }
 
-// HandlerWithoutID handles the /dashboard/v1/registrations path.
+/*
+HandlerWithoutID handles the /dashboard/v1/registrations path.
+*/
 func HandlerWithoutID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         w.Header().Set("content-type", "application/json")
         // Switch on the HTTP request method
@@ -1481,57 +1564,62 @@ func HandlerWithoutID(w http.ResponseWriter, r *http.Request) <span class="cov8"
 
 }
 
+/*
+handleRegistrationsGetRequest handles the GET request for the /dashboard/v1/registrations path.
+*/
 func handleRegistrationsGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        // Pseudocode
-        // Get all registrations from the database
-        // Return the registrations
-        // If there is an error, return an error message
 
         // Get the all dashboard config documents
-        allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
+        allDocuments, err2 := db.GetAllDocuments[requests.DashboardConfig](db.DashboardCollection)
         if err2 != nil </span><span class="cov0" title="0">{
                 http.Error(
                         w,
-                        "Error while trying to receive document from db.",
+                        constants.ErrDBGetDoc,
                         http.StatusInternalServerError,
                 )
-                log.Println("Error while trying to receive document from db: ", err2.Error())
+                log.Println(constants.ErrDBGetDoc + err2.Error())
                 return
         }</span>
 
-        // Marshal the status object to JSON
-        <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
-                allDocuments,
-                "",
-                "\t",
-        )
-        if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err3.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
-                return
-        }</span>
+        <span class="cov8" title="1">if len(allDocuments) &gt; 0 </span><span class="cov0" title="0">{
+                // Marshal the status object to JSON
+                marshaled, err3 := json.MarshalIndent(
+                        allDocuments,
+                        "",
+                        "\t",
+                )
+                if err3 != nil </span><span class="cov0" title="0">{
+                        log.Println(constants.ErrJsonMarshal + err3.Error())
+                        http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
+                        return
+                }</span>
 
-        // Write the JSON to the response
-        <span class="cov8" title="1">_, err4 := w.Write(marshaled)
-        if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err4.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
-                return
+                // Write the JSON to the response
+                <span class="cov0" title="0">_, err4 := w.Write(marshaled)
+                if err4 != nil </span><span class="cov0" title="0">{
+                        log.Println(constants.ErrWriteResponse + err4.Error())
+                        http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
+                        return
+                }</span>
+        } else<span class="cov8" title="1"> {
+                http.Error(w, constants.ErrDBNoDocs, http.StatusNoContent)
         }</span>
 }
 
-// Returns only the headers for the request to retrieve all dashboards configs
+/*
+handleRegistrationsHeadRequest handles the HEAD request for the /dashboard/v1/registrations path.
+*/
 func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
 
         // Get all dashboard config documents to get content length
-        allDocuments, err2 := firebase.GetAllDocuments[requests.DashboardConfig](firebase.DashboardCollection)
+        allDocuments, err2 := db.GetAllDocuments[requests.DashboardConfig](db.DashboardCollection)
         if err2 != nil </span><span class="cov0" title="0">{
                 http.Error(
                         w,
-                        "Error while trying to receive document from db.",
+                        constants.ErrDBGetDoc,
                         http.StatusInternalServerError,
                 )
-                log.Println("Error while trying to receive document from db: ", err2.Error())
+                log.Println(constants.ErrDBGetDoc + err2.Error())
                 return
         }</span>
 
@@ -1542,8 +1630,8 @@ func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) <spa
                 "\t",
         )
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err3.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err3.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
@@ -1555,7 +1643,6 @@ func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) <spa
                 "Content-Length": strconv.Itoa(len(marshaled)),
         }
 
-        fmt.Println(headers)
         // Set response headers
         for key, value := range headers </span><span class="cov8" title="1">{
                 w.Header().Set(key, value)
@@ -1564,6 +1651,9 @@ func handleRegistrationsHeadRequest(w http.ResponseWriter, r *http.Request) <spa
         <span class="cov8" title="1">w.WriteHeader(http.StatusOK)</span>
 }
 
+/*
+handleRegistrationsPostRequest handles the POST request for the /dashboard/v1/registrations path.
+*/
 func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
 
         var content requests.DashboardConfig
@@ -1571,8 +1661,8 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) <spa
         decoder := json.NewDecoder(r.Body)
         err := decoder.Decode(&amp;content)
         if err != nil </span><span class="cov8" title="1">{
-                log.Println("Error while decoding json: ", err.Error())
-                http.Error(w, "Error while decoding json.", http.StatusBadRequest)
+                log.Println(constants.ErrJsonDecode + err.Error())
+                http.Error(w, constants.ErrJsonDecode, http.StatusBadRequest)
                 return
         }</span>
 
@@ -1580,16 +1670,19 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) <spa
         content.ID = utils.GenerateRandomID()
 
         // Save the DashboardConfig to the database
-        err2 := firebase.AddDocument[requests.DashboardConfig](content, firebase.DashboardCollection)
+        err2 := db.AddDocument[requests.DashboardConfig](content, db.DashboardCollection)
         if err2 != nil </span><span class="cov0" title="0">{
-                http.Error(w, "Error while trying to add document.", http.StatusInternalServerError)
+                http.Error(w, constants.ErrDBAddDoc, http.StatusInternalServerError)
         }</span>
 
         // Check if any notifications are registered for the event
-        <span class="cov8" title="1">foundNotifications, err3 := notifications.FindNotificationsByCountry(requests.EventRegister, content.IsoCode)
+        <span class="cov8" title="1">foundNotifications, err3 := notifications.FindNotificationsByCountry(
+                requests.EventRegister,
+                content.IsoCode,
+        )
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error while trying to find notifications: ", err3.Error())
-                http.Error(w, "Error while trying to find notifications.", http.StatusInternalServerError)
+                log.Println(constants.ErrNotificationsGetDocFromDB, err3.Error())
+                http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
                 return
         }</span>
 
@@ -1606,16 +1699,18 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) <spa
                 "\t",
         )
         if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err4.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err4.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
+        // Set the status code to 201 Created
+        <span class="cov8" title="1">w.WriteHeader(http.StatusCreated)
         // Write the JSON to the response
-        <span class="cov8" title="1">_, err5 := w.Write(marshaled)
+        _, err5 := w.Write(marshaled)
         if err5 != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err5.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                log.Println(constants.ErrWriteResponse + err5.Error())
+                http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 return
         }</span>
 }
@@ -1625,9 +1720,10 @@ func handleRegistrationsPostRequest(w http.ResponseWriter, r *http.Request) <spa
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/http/datatransfers/requests"
+        "assignment-2/internal/http/handlers/notifications"
         "assignment-2/internal/utils"
         "encoding/json"
         "fmt"
@@ -1682,22 +1778,27 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
                 return
         }</span>
 
-        <span class="cov8" title="1">log.Printf("Received request to get registration with ID %s\n", id)
-
         // Get the registration with the provided ID
-        dashboard, err2 := firebase.GetDocument[requests.DashboardConfig](
+        <span class="cov8" title="1">dashboard, err2 := db.GetDocument[requests.DashboardConfig](
                 id,
-                firebase.DashboardCollection,
+                db.DashboardCollection,
         )
-        if err2 != nil </span><span class="cov8" title="1">{
-                http.Error(
-                        w,
-                        "Error while trying to receive document from db.",
-                        http.StatusInternalServerError,
-                )
-                log.Println("Error while trying to receive document from db: ", err2.Error())
-                return
-        }</span>
+        if err2 != nil </span><span class="cov0" title="0">{
+                switch err2.Error() </span>{
+                case constants.ErrIDInvalid:<span class="cov0" title="0">
+                        http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)</span>
+                case constants.ErrDBDocNotFound:<span class="cov0" title="0">
+                        http.Error(w, constants.ErrDBDocNotFound, http.StatusNoContent)</span>
+                default:<span class="cov0" title="0">
+                        http.Error(
+                                w,
+                                constants.ErrDBGetDoc,
+                                http.StatusInternalServerError,
+                        )</span>
+                }
+                <span class="cov0" title="0">log.Println(constants.ErrDBGetDoc + err2.Error())
+                return</span>
+        }
 
         // Marshal the status object to JSON
         <span class="cov8" title="1">marshaled, err3 := json.MarshalIndent(
@@ -1706,16 +1807,16 @@ func handleRegistrationsGetRequestWithID(w http.ResponseWriter, r *http.Request)
                 "\t",
         )
         if err3 != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err3.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err3.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
         // Write the JSON to the response
         <span class="cov8" title="1">_, err4 := w.Write(marshaled)
         if err4 != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err4.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                log.Println(constants.ErrWriteResponse + err4.Error())
+                http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 return
         }</span>
 }
@@ -1731,40 +1832,97 @@ func handleRegistrationsPutRequestWithID(w http.ResponseWriter, r *http.Request)
 
         <span class="cov8" title="1">decoder := json.NewDecoder(r.Body)
         if err := decoder.Decode(&amp;update); err != nil </span><span class="cov8" title="1">{
-                log.Println("Error while decoding json: ", err.Error())
-                http.Error(w, "Error while decoding json.", http.StatusBadRequest)
+                log.Println(constants.ErrJsonDecode + err.Error())
+                http.Error(w, constants.ErrJsonDecode, http.StatusBadRequest)
                 return
         }</span>
 
         <span class="cov8" title="1">update.ID = id
         update.LastChange = time.Now()
 
-        log.Println("Received request to update registration with ID ", id)
-
-        err3 := firebase.UpdateDocument[requests.DashboardConfig](
+        err3 := db.UpdateDocument[requests.DashboardConfig](
                 update, id,
-                firebase.DashboardCollection,
+                db.DashboardCollection,
         )
         if err3 != nil </span><span class="cov8" title="1">{
                 http.Error(w, err3.Error(), http.StatusInternalServerError)
         }</span>
-        <span class="cov8" title="1">log.Println("Successfully updated registration with ID:", id)</span>
+
+        // Check if any notifications are registered for the event
+        <span class="cov8" title="1">foundNotifications, err4 := notifications.FindNotificationsByCountry(
+                requests.EventChange,
+                update.IsoCode,
+        )
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println(constants.ErrNotificationsGetDocFromDB, err4.Error())
+                http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
+                return
+        }</span>
+
+        // If found, invoke the notifications
+        <span class="cov8" title="1">if len(foundNotifications) &gt; 0 </span><span class="cov0" title="0">{
+                for _, n := range foundNotifications </span><span class="cov0" title="0">{
+                        notifications.InvokeNotification(n)
+                }</span>
+        }
+
+        <span class="cov8" title="1">w.WriteHeader(http.StatusNoContent)</span>
 }
 
 func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         id, err := utils.GetIDFromRequest(r)
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 http.Error(w, err.Error(), http.StatusBadRequest)
                 return
         }</span>
 
-        <span class="cov8" title="1">log.Println("Received request to delete registration with ID ", id)
+        // Get the registration with the provided ID
+        <span class="cov8" title="1">dashboard, err3 := db.GetDocument[requests.DashboardConfig](
+                id,
+                db.DashboardCollection,
+        )
+        if err3 != nil </span><span class="cov0" title="0">{
+                switch err3.Error() </span>{
+                case constants.ErrIDInvalid:<span class="cov0" title="0">
+                        http.Error(w, constants.ErrIDInvalid, http.StatusBadRequest)</span>
+                case constants.ErrDBDocNotFound:<span class="cov0" title="0">
+                        http.Error(w, constants.ErrDBDocNotFound, http.StatusNoContent)</span>
+                default:<span class="cov0" title="0">
+                        http.Error(
+                                w,
+                                constants.ErrDBGetDoc,
+                                http.StatusInternalServerError,
+                        )</span>
+                }
+                <span class="cov0" title="0">log.Println(constants.ErrDBGetDoc + err3.Error())
+                return</span>
+        }
 
-        err2 := firebase.DeleteDocument(id, firebase.DashboardCollection)
-        if err2 != nil </span><span class="cov8" title="1">{
+        <span class="cov8" title="1">err2 := db.DeleteDocument(id, db.DashboardCollection)
+        if err2 != nil </span><span class="cov0" title="0">{
                 http.Error(w, err2.Error(), http.StatusInternalServerError)
                 return
         }</span>
+
+        // Check if any notifications are registered for the event
+        <span class="cov8" title="1">foundNotifications, err4 := notifications.FindNotificationsByCountry(
+                requests.EventDelete,
+                dashboard.IsoCode,
+        )
+        if err4 != nil </span><span class="cov0" title="0">{
+                log.Println(constants.ErrNotificationsGetDocFromDB, err4.Error())
+                http.Error(w, constants.ErrNotificationsGetDocFromDB, http.StatusInternalServerError)
+                return
+        }</span>
+
+        // If found, invoke the notifications
+        <span class="cov8" title="1">if len(foundNotifications) &gt; 0 </span><span class="cov0" title="0">{
+                for _, n := range foundNotifications </span><span class="cov0" title="0">{
+                        notifications.InvokeNotification(n)
+                }</span>
+        }
+
+        <span class="cov8" title="1">w.WriteHeader(http.StatusNoContent)</span>
 }
 </pre>
 		
@@ -1772,12 +1930,6 @@ func handleRegistrationsDeleteRequestWithID(w http.ResponseWriter, r *http.Reque
 
 import (
         `assignment-2/internal/http/datatransfers/inhouse`
-        `assignment-2/internal/http/datatransfers/requests`
-        "encoding/json"
-        "fmt"
-        "io"
-        "log"
-        "net/http"
         "time"
 )
 
@@ -1790,45 +1942,13 @@ type registrationResponse struct {
 func GetEndpointStructs() []inhouse.Endpoint <span class="cov0" title="0">{
         return []inhouse.Endpoint{registrationsEndpointWithoutID, registrationsEndpointWithID}
 }</span>
-
-func checkValidityOfResponseBody(w http.ResponseWriter, r *http.Request) (
-        bool,
-        error,
-) <span class="cov0" title="0">{
-        var dashboardConfig requests.DashboardConfig
-        var copyOfBody = r.Body
-
-        // Read and parse the body
-        body, err := io.ReadAll(copyOfBody)
-        if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error reading request body: ", err)
-                // Note: We don't return the error here because we want to return a generic error message
-                return false, fmt.Errorf("error reading request body")
-        }</span>
-
-        <span class="cov0" title="0">if len(body) == 0 </span><span class="cov0" title="0">{
-                log.Println("Empty request body")
-                return false, fmt.Errorf("empty request body")
-        }</span>
-
-        // Decode the body into a DashboardConfig struct
-        <span class="cov0" title="0">err = json.Unmarshal(body, &amp;dashboardConfig)
-        if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error decoding request body: ", err)
-                return false, fmt.Errorf("error decoding request body")
-        }</span>
-
-        // Additional checks can be added here to validate the body
-
-        <span class="cov0" title="0">return true, nil</span>
-}
 </pre>
 		
 		<pre class="file" id="file11" style="display: none">package status
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/datatransfers/inhouse"
         "assignment-2/internal/utils"
         "encoding/json"
@@ -1839,7 +1959,8 @@ import (
         "time"
 )
 
-// A Status struct to hold the status of the server, including the status of the APIs and the version
+// A status struct to hold the status of the server,
+// including the status of the external APIs and the version
 // of the server.
 type status struct {
         CountriesAPI   int    `json:"countries_api"`
@@ -1847,6 +1968,7 @@ type status struct {
         CurrencyAPI    int    `json:"currency_api"`
         DashboardDB    int    `json:"dashboard_db"`
         NotificationDB int    `json:"notification_db"`
+        Dashboards     int    `json:"dashboards"`
         Webhooks       int    `json:"webhooks"`
         Version        string `json:"version"`
         Uptime         int    `json:"uptime"`
@@ -1893,16 +2015,27 @@ func Handler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1
 // handleStatusGetRequest handles the GET request for the /status path.
 // It returns the status of the server and the APIs it relies on.
 func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        notificationCount, err := db.NumOfDocumentsInCollection(db.NotificationCollection)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, constants.ErrDBCount, http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov8" title="1">dashboardCount, err := db.NumOfDocumentsInCollection(db.DashboardCollection)
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, constants.ErrDBCount, http.StatusInternalServerError)
+                return
+        }</span>
+
         // Create a new status object
-        // TODO: Implement the Webhooks
-        // TODO: Implement firebase testing/mocking
-        currentStatus := status{
+        <span class="cov8" title="1">currentStatus := status{
                 CountriesAPI:   getStatusCode(utils.CurrentRestCountriesApi, w),
                 MeteoAPI:       getStatusCode(utils.CurrentMeteoApi, w),
                 CurrencyAPI:    getStatusCode(utils.CurrentCurrencyApi, w),
-                DashboardDB:    firebase.GetStatusCodeOfCollection(w, firebase.DashboardCollection),
-                NotificationDB: firebase.GetStatusCodeOfCollection(w, firebase.NotificationCollection),
-                Webhooks:       http.StatusNotImplemented,
+                DashboardDB:    db.GetStatusCodeOfCollection(db.DashboardCollection),
+                NotificationDB: db.GetStatusCodeOfCollection(db.NotificationCollection),
+                Dashboards:     dashboardCount,
+                Webhooks:       notificationCount,
                 Version:        constants.Version,
                 Uptime:         int(math.Round(time.Since(utils.StartTime).Seconds())),
         }
@@ -1910,16 +2043,16 @@ func handleStatusGetRequest(w http.ResponseWriter, r *http.Request) <span class=
         // Marshal the status object to JSON
         marshaledStatus, err := json.MarshalIndent(currentStatus, "", "\t")
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Error during JSON encoding: " + err.Error())
-                http.Error(w, "Error during JSON encoding.", http.StatusInternalServerError)
+                log.Println(constants.ErrJsonMarshal + err.Error())
+                http.Error(w, constants.ErrJsonMarshal, http.StatusInternalServerError)
                 return
         }</span>
 
         // Write the JSON to the response
         <span class="cov8" title="1">_, err = w.Write(marshaledStatus)
         if err != nil </span><span class="cov0" title="0">{
-                log.Println("Failed to write response: " + err.Error())
-                http.Error(w, "Failed to write response", http.StatusInternalServerError)
+                log.Println(constants.ErrWriteResponse + err.Error())
+                http.Error(w, constants.ErrWriteResponse, http.StatusInternalServerError)
                 return
         }</span>
 }
@@ -1952,7 +2085,7 @@ func getStatusCode(url string, w http.ResponseWriter) int <span class="cov8" tit
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/http/handlers"
         "assignment-2/internal/http/handlers/dashboards"
         "assignment-2/internal/http/handlers/notifications"
@@ -1969,10 +2102,10 @@ Start the server on the port specified in the environment variable PORT. If PORT
 */
 func Start() <span class="cov0" title="0">{
         // Initialization of firebase database
-        firebase.Initialize()
+        db.Initialize()
 
         // Firebase client closes at the end of this function
-        defer firebase.Close()
+        defer db.Close()
 
         // Get the port from the environment variable, or use the default port
         port := utils.GetPort()
@@ -2011,10 +2144,7 @@ func Start() <span class="cov0" title="0">{
         // Notifications with ID
         mux.HandleFunc(constants.NotificationsPath+"{id}", notifications.HandlerWithID)
 
-        fs := http.FileServer(http.Dir("web"))
-        mux.Handle("/web/", http.StripPrefix("/web/", fs))
-
-        // Default, redirect to /web/
+        // Default
         mux.HandleFunc("/", handlers.DefaultHandler)
 
         // Start server
@@ -2027,7 +2157,7 @@ func Start() <span class="cov0" title="0">{
 
 import (
         "assignment-2/internal/constants"
-        "assignment-2/internal/datasources/firebase"
+        "assignment-2/internal/db"
         "assignment-2/internal/mock/stubs"
         "assignment-2/internal/utils"
         "log"
@@ -2038,7 +2168,7 @@ import (
 func InitForTesting() <span class="cov8" title="1">{
         setStubsForTesting()
         // Initialize Firebase for testing
-        firebase.InitializeForTesting()
+        db.InitializeForTesting()
         createTestHttpServer()
 }</span>
 
@@ -2069,8 +2199,8 @@ func createTestHttpServer() <span class="cov8" title="1">{
                         err := server.ListenAndServe()
                         if err != nil </span><span class="cov8" title="1">{
                                 if err.Error() == "listen tcp :8001: bind: address already in use" </span><span class="cov8" title="1">{
-                                        log.Println("Port 8001 is in use, sleeping for 2 seconds and trying again")
-                                        time.Sleep(2 * time.Second)
+                                        log.Println("Port 8001 is in use, sleeping for 5 seconds and trying again")
+                                        time.Sleep(5 * time.Second)
                                         err = server.ListenAndServe()
                                         if err != nil </span><span class="cov0" title="0">{
                                                 log.Fatalf("Failed to start http server: %v", err)
@@ -2084,33 +2214,7 @@ func createTestHttpServer() <span class="cov8" title="1">{
 }
 
 func TeardownAfterTesting() {<span class="cov0" title="0">
-        // cmd := exec.Command(
-        //         "curl",
-        //         "-v",
-        //         "-X",
-        //         "DELETE",
-        //         "http://localhost:8888/emulator/v1/projects/prog2005-assignment-2-c2e5c/databases/(" +
-        //        "default)/documents",
-        // )
-        // if err := cmd.Run(); err != nil {
-        //         log.Fatalf("Failed to stop Firestore emulator: %v", err)
-        // }
-
-        // Close http server
-        // err := server.Close()
-        // if err != nil {
-        //         log.Fatalf("Failed to shutdown http server: %v", err)
-        // }
-
-        // // Clean up any resources after all tests have been executed
-        // firebase.Close()
-        //
-        // // firebase emulators:stop
-        // cmd := exec.Command("firebase", "emulators:stop")
-        // if err := cmd.Run(); err != nil {
-        //         log.Fatalf("Failed to stop Firestore emulator: %v", err)
-        // }
-        // os.Exit(0)
+        // Currently not used as Go creates a new instance of the server for each test
 }</span>
 </pre>
 		
@@ -2238,6 +2342,7 @@ func ParseFile(filename string) []byte <span class="cov8" title="1">{
 		<pre class="file" id="file18" style="display: none">package utils
 
 import (
+        "assignment-2/internal/constants"
         "crypto/sha256"
         "fmt"
         "log"
@@ -2254,10 +2359,9 @@ func GetIDFromRequest(r *http.Request) (string, error) <span class="cov8" title=
         if id == "" </span><span class="cov8" title="1">{
                 // Special case: for testing purposes, we allow the ID to be passed as a query parameter
                 id = r.URL.Query().Get("id")
-                log.Println("ID from query parameter: ", id, " URL: ", r.URL.String())
                 if id == "" </span><span class="cov8" title="1">{
-                        log.Println("ID not provided")
-                        return "", fmt.Errorf("ID not provided")
+                        log.Println(constants.ErrIDNotProvided)
+                        return "", fmt.Errorf(constants.ErrIDNotProvided)
                 }</span>
         }
 
